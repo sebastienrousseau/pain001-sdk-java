@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+cff-version: 1.2.0
+message: "If you use pain001-sdk-java in research or production write-ups, please cite it as below."
+type: software
+title: "pain001-sdk-java: a typed Java client for the pain001 REST API"
+abstract: >-
+  A typed Java client for the pain001 REST API, which generates and
+  validates ISO 20022 pain.001 credit-transfer and pain.008 direct-debit
+  payment files. It is proven against the server by the pain001 SDK
+  conformance kit.
+authors:
+  - family-names: Rousseau
+    given-names: Sebastien
+    email: sebastian.rousseau@gmail.com
+version: "0.0.86"
+# Dual-licensed, at the user's option (LICENSE, LICENSE-APACHE,
+# LICENSE-MIT). CFF 1.2.0 takes SPDX licence identifiers, not an SPDX
+# expression; a list of several means the work is available under any of
+# them.
+license:
+  - Apache-2.0
+  - MIT
+repository-code: "https://github.com/sebastienrousseau/pain001-sdk-java"
+url: "https://pain001.com"
+keywords:
+  - ISO 20022
+  - pain.001
+  - pain.008
+  - payments
+  - Java
+  - SDK
