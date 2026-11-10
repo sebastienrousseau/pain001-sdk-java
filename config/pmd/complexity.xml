@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 OR MIT -->
+<!--
+  The suite's complexity ceilings, enforced by `mvn verify`:
+  cyclomatic 10 and cognitive 15 per method, and at most 60 non-comment
+  statements per method and 500 per class (NcssCount; PMD 7 has no
+  physical-line method rule). `make size` checks the 500-line file limit.
+  PMD reports a value at or above the level, so each level is the
+  ceiling plus one.
+-->
+<ruleset name="pain001-sdk complexity"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>Complexity ceilings only.</description>
+
+  <rule ref="category/java/design.xml/CyclomaticComplexity">
+    <properties>
+      <property name="methodReportLevel" value="11"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties>
+      <property name="reportLevel" value="16"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/NcssCount">
+    <properties>
+      <property name="methodReportLevel" value="61"/>
+      <property name="classReportLevel" value="501"/>
+    </properties>
+  </rule>
+</ruleset>
