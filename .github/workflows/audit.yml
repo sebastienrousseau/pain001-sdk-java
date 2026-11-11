@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# Dependency advisory audit. Maven resolves the exact dependency set into
+# a CycloneDX SBOM (target/bom.json, test scope included), and
+# OSV-Scanner checks every package in it against the OSV database, which
+# carries the GitHub, NVD-derived and Maven advisories. The job fails on
+# any known advisory, and also when the SBOM holds no packages, so a
+# resolution failure cannot pass as a clean result.
+#
+# OSV-Scanner was chosen over OWASP dependency-check because it needs no
+# NVD API key (no repository secret) and does not download the full NVD
+# feed on every run. The binary is pinned to v2.7.1 and checked against
+# the SHA-256 in that release's osv-scanner_SHA256SUMS.
+name: Dependency audit
+
+on:
+  push:
+    branches: [main, "feat/*"]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 4 * * 1" # weekly, Monday 04:00 UTC: new advisories, same code
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  osv-scanner:
+    name: OSV-Scanner over the Maven SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OSV_VERSION: v2.7.1
+      OSV_SHA256: fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install OSV-Scanner (checksum-verified)
+        run: |
+          set -euo pipefail
+          curl -sSfL -o "$RUNNER_TEMP/osv-scanner" \
+            "https://github.com/google/osv-scanner/releases/download/${OSV_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SHA256}  $RUNNER_TEMP/osv-scanner" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/osv-scanner"
+
+      - name: SBOM and advisory scan
+        run: make audit OSV_SCANNER="$RUNNER_TEMP/osv-scanner"
