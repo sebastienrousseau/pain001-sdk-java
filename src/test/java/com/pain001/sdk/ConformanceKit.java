@@ -97,11 +97,21 @@ final class ConformanceKit {
 
   private static JsonNode step(JsonNode value, String token) {
     if (value.isArray()) {
-      boolean digits = !token.isEmpty() && token.chars().allMatch(c -> c >= '0' && c <= '9');
-      boolean fits = digits && token.length() < 10;
-      return fits ? value.get(Integer.parseInt(token)) : null;
+      return element(value, token);
     }
     return value.isObject() ? value.get(token) : null;
+  }
+
+  /** The array element a decimal token names; absent for "-", signs or overflow. */
+  private static JsonNode element(JsonNode array, String token) {
+    if (token.isEmpty() || !token.chars().allMatch(c -> c >= '0' && c <= '9')) {
+      return null;
+    }
+    try {
+      return array.get(Integer.parseInt(token));
+    } catch (NumberFormatException overflow) {
+      return null;
+    }
   }
 
   /** Sends one case and returns the failed expectations (empty = pass). */
