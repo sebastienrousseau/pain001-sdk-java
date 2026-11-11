@@ -10,8 +10,8 @@ there.
 
 ## Before you open a pull request
 
-Everything CI checks, you can run locally with a JDK (17 or newer) and
-Maven:
+Everything CI checks, you can run locally with a JDK (17 or newer);
+`./mvnw` fetches the pinned Maven and checks its SHA-256:
 
 ```sh
 make check            # whitespace format, file size, mvn -B verify, example compile
@@ -21,6 +21,13 @@ make check            # whitespace format, file size, mvn -B verify, example com
 (a stub HTTP server, no network) and fails on any PMD complexity
 violation (cyclomatic 10, cognitive 15, 60 statements per method,
 `config/pmd/complexity.xml`).
+
+Maven refuses any dependency or plugin whose SHA-256 is not recorded in
+`.mvn/checksums/` (see `.mvn/maven.config`). After changing a dependency
+or plugin version, including a Dependabot bump, run `make lock`, review
+the diff of `.mvn/checksums/`, and commit it with the change. `make
+audit` builds a CycloneDX SBOM and checks it with
+[OSV-Scanner](https://google.github.io/osv-scanner/), as CI does.
 
 To run the conformance kit and the typed tests, start a server and point
 the tests at it:

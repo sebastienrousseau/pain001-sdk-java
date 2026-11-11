@@ -2,8 +2,9 @@
 #
 # Lint, build and unit tests on Java 17 and 21, then the conformance kit
 # and the typed tests against a real `pain001 serve`, installed from the
-# hash-pinned ci/server-requirements.txt. Maven is the runner's own; the
-# repository ships no Maven Wrapper.
+# hash-pinned ci/server-requirements.txt. Maven comes from ./mvnw (3.10.0,
+# SHA-256 checked) and every artifact it resolves must match
+# .mvn/checksums/.
 name: CI
 
 on:

@@ -77,7 +77,7 @@ Maven repository:
 ```sh
 git clone https://github.com/sebastienrousseau/pain001-sdk-java
 cd pain001-sdk-java
-mvn -B install
+./mvnw -B install
 ```
 
 The one runtime dependency is Jackson databind (`com.fasterxml.jackson.core:jackson-databind`).
