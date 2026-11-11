@@ -30,5 +30,5 @@ will be 0.0.86.
 - `examples/GenerateCreditTransfer.java`, which writes a pain.001.001.09
   file from the kit's credit-transfer fixture.
 - CI on Java 17 and 21 with PMD complexity ceilings, a conformance job
-  against `pain001 serve` 0.0.85 from hash-pinned requirements, DCO and
+  against `pain001 serve` 0.0.86 from hash-pinned requirements, DCO and
   Markdown lint, and the suite's community files.
