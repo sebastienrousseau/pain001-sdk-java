@@ -33,7 +33,7 @@ To run the conformance kit and the typed tests, start a server and point
 the tests at it:
 
 ```sh
-pip install 'pain001[api]==0.0.86'
+pip install 'pain001[api]==0.0.87'
 pain001 serve --host 127.0.0.1 --port 8000 &
 PAIN001_BASE_URL=http://127.0.0.1:8000 make conformance
 PAIN001_BASE_URL=http://127.0.0.1:8000 make example
