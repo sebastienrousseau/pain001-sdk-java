@@ -5,13 +5,13 @@
 ## Supported versions
 
 This SDK follows the [`pain001`](https://github.com/sebastienrousseau/pain001)
-suite cadence. It has no release yet; the first will be 0.0.86. While
+suite cadence. It has no release yet; the first will be 0.0.87. While
 pre-1.0, the latest released `0.0.x` receives security fixes; older
 `0.0.x` versions do not.
 
 | Version | Status | Receives security fixes? |
 | :--- | :--- | :--- |
-| Unreleased (`0.0.86-SNAPSHOT`) | In development | Not yet released |
+| Unreleased (`0.0.87-SNAPSHOT`) | In development | Not yet released |
 
 ## Reporting a vulnerability
 

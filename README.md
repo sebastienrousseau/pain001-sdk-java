@@ -65,12 +65,12 @@
 <dependency>
   <groupId>com.pain001</groupId>
   <artifactId>pain001-sdk</artifactId>
-  <version>0.0.86</version>
+  <version>0.0.87</version>
 </dependency>
 ```
 
 The package is not yet on Maven Central; the coordinates above are the
-ones the first release (0.0.86, in lockstep with the pain001 suite) will
+ones the first release (0.0.87, in lockstep with the pain001 suite) will
 use. Until then, build it from source and install it into your local
 Maven repository:
 

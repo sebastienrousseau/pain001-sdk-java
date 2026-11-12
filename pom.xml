@@ -7,7 +7,7 @@
 
   <groupId>com.pain001</groupId>
   <artifactId>pain001-sdk</artifactId>
-  <version>0.0.86-SNAPSHOT</version>
+  <version>0.0.87-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>pain001-sdk</name>
