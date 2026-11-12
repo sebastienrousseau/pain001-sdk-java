@@ -89,6 +89,46 @@ class Pain001ClientTest {
   }
 
   @Test
+  void aRefusedGenerationCarriesItsFindings() throws IOException {
+    String body =
+        "{\"success\": false, \"message\": \"Validation failed\", \"filename\": null,"
+            + " \"xml\": null, \"validation_errors\": [{\"field\": \"$.currency\","
+            + " \"message\": \"bad currency\", \"value\": \"EURO\"}], \"scheme_violations\":"
+            + " [{\"rule\": \"UK-CHAPS-PURP\", \"severity\": \"error\"}]}";
+    try (StubServer server = new StubServer(422, body)) {
+      Pain001Client client = client(server);
+      GenerationRefusedException error =
+          assertThrows(
+              GenerationRefusedException.class,
+              () -> client.generate("SECRET-ROW", "p.csv", "pain.001.001.09", "uk-chaps"));
+      assertEquals(422, error.status());
+      assertTrue(error.detail().isNull());
+      assertEquals(
+          "pain001 API returned HTTP 422 for POST /api/v1/ui/generate", error.getMessage());
+      GenerateResponse refused = error.response();
+      assertFalse(refused.success());
+      assertNull(refused.xml());
+      assertEquals("Validation failed", refused.message());
+      RowError row = refused.validationErrors().get(0);
+      assertEquals("$.currency", row.field());
+      assertEquals("EURO", row.value().asText());
+      assertEquals("UK-CHAPS-PURP", refused.schemeViolations().get(0).get("rule").asText());
+    }
+  }
+
+  @Test
+  void aRequestValidation422FromGenerateIsAPlainApiException() throws IOException {
+    try (StubServer server = new StubServer(422, "{\"detail\": [{\"msg\": \"missing\"}]}")) {
+      Pain001Client client = client(server);
+      Pain001ApiException error =
+          assertThrows(
+              Pain001ApiException.class, () -> client.generate("a", "p.csv", "pain.001.001.09"));
+      assertFalse(error instanceof GenerationRefusedException);
+      assertEquals("missing", error.detail().get(0).get("msg").asText());
+    }
+  }
+
+  @Test
   void checkMapsFindings() throws IOException {
     String body =
         "{\"message_type\": \"pain.001.001.09\", \"passed\": false, \"errors\": 1,"

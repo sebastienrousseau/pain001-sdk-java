@@ -99,6 +99,7 @@ The one runtime dependency is Jackson databind (`com.fasterxml.jackson.core:jack
 
 ```java
 import com.pain001.sdk.GenerateResponse;
+import com.pain001.sdk.GenerationRefusedException;
 import com.pain001.sdk.Pain001Client;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -110,14 +111,23 @@ Pain001Client client = Pain001Client.builder()
     .build();
 
 String csv = Files.readString(Path.of("payments.csv"));
-GenerateResponse result = client.generate(csv, "payments.csv", "pain.001.001.09");
-Files.writeString(Path.of("payments.xml"), result.xml());
+try {
+    GenerateResponse result = client.generate(csv, "payments.csv", "pain.001.001.09");
+    Files.writeString(Path.of("payments.xml"), result.xml());
+} catch (GenerationRefusedException refused) {
+    GenerateResponse findings = refused.response();
+    findings.validationErrors().forEach(e -> System.err.println(e.field() + ": " + e.message()));
+    findings.schemeViolations().forEach(v -> System.err.println(v.path("rule").asText()));
+}
 ```
 
 Start the server first (`pain001 serve --host 127.0.0.1 --port 8000`).
 `generate` posts the file's text to `/api/v1/ui/generate` and returns the
-XML; if the server rejects the input, it raises `Pain001ApiException`
-with the HTTP status and the server's `detail`.
+XML. When the server refuses the data (rows that fail validation, or a
+scheme rule), it answers HTTP 422 and `generate` raises
+`GenerationRefusedException`, whose `response()` holds the findings.
+Any other rejection raises `Pain001ApiException` with the HTTP status and
+the server's `detail`.
 
 ---
 
@@ -147,7 +157,7 @@ the clients agree on what the server does.
 | Documents | `check(...)`: XSD, MDR, scheme and Schematron rungs on a pain.001 or pain.008 document | Supported |
 | Faces | `faces()` and `projectFace(...)`: project a pain.001 document onto Berlin Group, ISO 2018 names or UK Open Banking, with a loss report | Supported |
 | Raw calls | `request(method, path, body)`: any endpoint, any status | Supported |
-| Errors | `Pain001ApiException` with `status()` and the parsed `detail()` | Supported |
+| Errors | `Pain001ApiException` with `status()` and the parsed `detail()`; `GenerationRefusedException` with the refused generation's findings | Supported |
 | Async jobs | `/api/v1/generate/async`, `/api/v1/status/{id}`, `/api/v1/download/{id}` | Reachable through `request` only |
 | Retries | Automatic retry of failed requests | Not provided, by design |
 
@@ -196,7 +206,11 @@ There is no `docs/BENCHMARKS.md` yet, because there are no results.
 - **Errors carry the server's words.** A non-2xx response raises
   `Pain001ApiException`: `status()` is the HTTP status and `detail()` the
   parsed `detail`, a string for most errors and an array for HTTP 422.
-  The exception message names only the status, method and path.
+  A refused `generate` (HTTP 422, `success: false`) raises the subclass
+  `GenerationRefusedException`, whose `response()` is the decoded
+  `GenerateResponse` with its `validationErrors()` and
+  `schemeViolations()`. The exception message names only the status,
+  method and path.
 - **Transport failures** (connection refused, timeout) raise
   `java.io.UncheckedIOException`.
 - **No retries and no logging.** The client never logs request or

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import com.pain001.sdk.GenerateResponse;
+import com.pain001.sdk.GenerationRefusedException;
 import com.pain001.sdk.MessageType;
 import com.pain001.sdk.Pain001Client;
 import java.io.IOException;
@@ -38,11 +39,18 @@ public final class GenerateCreditTransfer {
             .build();
 
     String csv = Files.readString(input, StandardCharsets.UTF_8);
-    GenerateResponse result =
-        client.generate(csv, "payments.csv", MessageType.PAIN_001_001_09.value());
-    if (!result.success()) {
-      System.err.println("generation failed: " + result.message());
+    GenerateResponse result;
+    try {
+      result = client.generate(csv, "payments.csv", MessageType.PAIN_001_001_09.value());
+    } catch (GenerationRefusedException refused) {
+      GenerateResponse findings = refused.response();
+      System.err.println("generation refused: " + findings.message());
+      findings
+          .validationErrors()
+          .forEach(e -> System.err.println("  " + e.field() + ": " + e.message()));
+      findings.schemeViolations().forEach(v -> System.err.println("  " + v.path("rule").asText()));
       System.exit(1);
+      return;
     }
     if (output.getParent() != null) {
       Files.createDirectories(output.getParent());

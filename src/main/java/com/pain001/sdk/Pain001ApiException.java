@@ -7,10 +7,12 @@ import com.fasterxml.jackson.databind.JsonNode;
  * The server answered with a non-2xx status.
  *
  * <p>{@link #detail()} is the parsed {@code detail} member of the error body: a string for most
- * errors, an array of validation errors for HTTP 422. The exception message names only the status,
- * method and path, never request content, so it is safe to log.
+ * errors, an array of request-validation errors for HTTP 422. A refused {@code generate} raises the
+ * subclass {@link GenerationRefusedException}, whose body has no {@code detail} but carries the
+ * findings. The exception message names only the status, method and path, never request content,
+ * so it is safe to log.
  */
-public final class Pain001ApiException extends RuntimeException {
+public class Pain001ApiException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
 

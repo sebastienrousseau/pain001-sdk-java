@@ -3,6 +3,7 @@ package com.pain001.sdk;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,6 +52,34 @@ class TypedApiTest {
     assertTrue(result.success());
     assertTrue(result.xml().contains("<NbOfTxs>5</NbOfTxs>"));
     assertTrue(result.xml().contains("urn:iso:std:iso:20022:tech:xsd:pain.001.001.09"));
+  }
+
+  @Test
+  void generateRefusedRowsCarriesTheRowErrors() {
+    Pain001Client client = LiveServer.client();
+    String bad = LiveServer.fixture("bad-currency.pain.001.001.09.csv");
+    GenerationRefusedException error =
+        assertThrows(
+            GenerationRefusedException.class, () -> client.generate(bad, "payments.csv", TYPE));
+    assertEquals(422, error.status());
+    GenerateResponse refused = error.response();
+    assertFalse(refused.success());
+    assertNull(refused.xml());
+    assertEquals("$.currency", refused.validationErrors().get(0).field());
+    assertEquals("EURO", refused.validationErrors().get(0).value().asText());
+  }
+
+  @Test
+  void generateRefusedSchemeCarriesTheViolations() {
+    Pain001Client client = LiveServer.client();
+    String chaps = LiveServer.fixture("chaps-no-purpose.pain.001.001.09.csv");
+    GenerationRefusedException error =
+        assertThrows(
+            GenerationRefusedException.class,
+            () -> client.generate(chaps, "payments.csv", TYPE, "uk-chaps"));
+    GenerateResponse refused = error.response();
+    assertEquals(List.of(), refused.validationErrors());
+    assertEquals("UK-CHAPS-PURP", refused.schemeViolations().get(0).get("rule").asText());
   }
 
   @Test

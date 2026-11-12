@@ -13,6 +13,17 @@ will be 0.0.86.
 
 ### Added
 
+- `GenerationRefusedException`, a subclass of `Pain001ApiException`
+  that `generate` raises when the server refuses the data (HTTP 422
+  with `success: false`, from pain001 0.0.87). Its `response()` is the
+  decoded `GenerateResponse`, so the caller gets the row errors and
+  scheme violations; `detail()` is JSON null because that body has no
+  `detail`. A 200 from `generate` now always carries the XML.
+- Conformance kit 2 from pain001 0.0.87: 14 cases, adding
+  `generate-refused-rows`, `generate-refused-scheme`,
+  `validate-bad-lei` and `validate-chaps-purpose-required`, and the
+  fixtures they read.
+
 - `Pain001Client`, a typed client for the pain001 REST API built on
   `java.net.http.HttpClient`: `health`, `validate`, `generate`, `check`,
   `faces`, `projectFace`, and the raw `request` the conformance runner

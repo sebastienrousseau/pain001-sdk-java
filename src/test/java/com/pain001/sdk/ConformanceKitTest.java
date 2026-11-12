@@ -59,9 +59,10 @@ class ConformanceKitTest {
   }
 
   @Test
-  void theKitHasCasesForEveryEndpoint() {
-    List<JsonNode> cases = ConformanceKit.cases(ConformanceKit.DIR);
-    assertTrue(cases.size() >= 10, "cases.json lists " + cases.size() + " cases");
+  void theVendoredKitIsVersionTwoWithFourteenCases() {
+    JsonNode kit = ConformanceKit.readJson(ConformanceKit.DIR.resolve("cases.json"));
+    assertEquals(2, kit.path("kit_version").asInt());
+    assertEquals(14, ConformanceKit.cases(ConformanceKit.DIR).size());
   }
 
   @Test

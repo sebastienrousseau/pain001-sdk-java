@@ -30,7 +30,8 @@ import java.util.regex.Pattern;
  * GenerateResponse result = client.generate(csv, "payments.csv", "pain.001.001.09");
  * }</pre>
  *
- * <p>Typed methods raise {@link Pain001ApiException} on a non-2xx response and {@link
+ * <p>Typed methods raise {@link Pain001ApiException} on a non-2xx response ({@link
+ * GenerationRefusedException}, with the findings, when {@code generate} is refused) and {@link
  * UncheckedIOException} when the request cannot be sent or times out. The client does not retry,
  * and never logs request or response bodies. Instances are immutable and thread-safe.
  */
@@ -97,11 +98,19 @@ public final class Pain001Client {
    * @param filename a name whose suffix picks the parser, for example {@code payments.csv}
    * @param messageType the ISO 20022 message type, for example {@code pain.001.001.09}
    * @param scheme comma-separated scheme rulebooks to enforce, or null
+   * @return the generated file; {@link GenerateResponse#success()} is true
+   * @throws GenerationRefusedException when the server refuses the data (HTTP 422 with {@code
+   *     success: false}); its {@link GenerationRefusedException#response()} holds the findings
    */
   public GenerateResponse generate(
       String content, String filename, String messageType, String scheme) {
     ObjectNode request = filePayload(content, filename, messageType, scheme);
-    return GenerateResponse.from(call("POST", "/api/v1/ui/generate", request));
+    String path = "/api/v1/ui/generate";
+    ApiResponse response = request("POST", path, request);
+    if (isRefusal(response)) {
+      throw new GenerationRefusedException(GenerateResponse.from(response.body()), "POST", path);
+    }
+    return GenerateResponse.from(checked(response, "POST", path));
   }
 
   /** {@code POST /api/v1/check} with the default rungs. */
@@ -209,11 +218,20 @@ public final class Pain001Client {
   }
 
   private JsonNode call(String method, String path, JsonNode body) {
-    ApiResponse response = request(method, path, body);
+    return checked(request(method, path, body), method, path);
+  }
+
+  private static JsonNode checked(ApiResponse response, String method, String path) {
     if (!response.isSuccess()) {
       throw new Pain001ApiException(response.status(), detail(response.body()), method, path);
     }
     return response.body();
+  }
+
+  /** HTTP 422 whose body is a generate result with {@code success: false}, not a {@code detail}. */
+  private static boolean isRefusal(ApiResponse response) {
+    JsonNode success = response.body().path("success");
+    return response.status() == 422 && success.isBoolean() && !success.asBoolean();
   }
 
   private static JsonNode detail(JsonNode body) {
