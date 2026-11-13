@@ -1,0 +1,120 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# Lint, build and unit tests on Java 17 and 21, then the conformance kit
+# and the typed tests against a real `pain001 serve`, installed from the
+# hash-pinned ci/server-requirements.txt. Maven comes from ./mvnw (3.10.0,
+# SHA-256 checked) and every artifact it resolves must match
+# .mvn/checksums/.
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint and format
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Whitespace format and file size
+        run: make format-check size
+
+      - name: javac -Xlint:all -Werror and PMD complexity ceilings
+        run: make lint
+
+  test:
+    name: Build and unit tests (Java ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ["17", "21"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+
+      - name: Every local gate (live tests skip here)
+        run: make check
+
+  conformance:
+    name: Conformance kit against pain001 serve
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PAIN001_BASE_URL: http://127.0.0.1:8000
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install the server (hash-pinned)
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/srv"
+          "$RUNNER_TEMP/srv/bin/python" -m pip install --require-hashes -r ci/server-requirements.txt
+
+      - name: Start pain001 serve and wait for health
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          nohup "$RUNNER_TEMP/srv/bin/pain001" serve --host 127.0.0.1 --port 8000 > server.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -fsS "$PAIN001_BASE_URL/api/v1/health"; then echo; exit 0; fi
+            sleep 1
+          done
+          cat server.log
+          exit 1
+
+      - name: Conformance kit and typed tests
+        run: make conformance
+
+      - name: Every conformance case ran (none skipped)
+        run: |
+          set -euo pipefail
+          report=target/surefire-reports/TEST-com.pain001.sdk.ConformanceTest.xml
+          cases=$(python -c 'import json; print(len(json.load(open("conformance/cases.json"))["cases"]))')
+          grep -Eq "tests=\"$cases\"" "$report"
+          grep -Eq 'skipped="0"' "$report"
+          grep -Eq 'skipped="0"' target/surefire-reports/TEST-com.pain001.sdk.TypedApiTest.xml
+          echo "$cases conformance cases ran and passed"
+
+      - name: Example generates a file
+        run: |
+          set -euo pipefail
+          make example
+          grep -q '<NbOfTxs>5</NbOfTxs>' target/credit-transfer.xml
+
+      - name: Server log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/server.log"
