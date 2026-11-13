@@ -11,6 +11,13 @@ will be 0.0.86.
 
 ## [Unreleased]
 
+### Changed
+
+- Tests run on JUnit 6.1.3 (was 5.14.4); it needs Java 17, the
+  build's existing floor, and no test source changed. Jackson moves
+  to 2.23.0 (was 2.22.4). `.mvn/checksums` re-recorded with
+  `make lock`.
+
 ### Added
 
 - `GenerationRefusedException`, a subclass of `Pain001ApiException`
