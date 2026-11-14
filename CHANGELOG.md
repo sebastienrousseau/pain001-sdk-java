@@ -27,6 +27,9 @@ is 0.0.88, the first published to Maven Central.
 
 ### Changed
 
+- The Maven release-signing public key is committed as
+  `MAVEN-SIGNING-KEY.asc` and documented in `docs/packaging.md`;
+  `KEYS.asc` stays the SSH allowed-signers list for commits and tags.
 - The version is 0.0.88 everywhere (`pom.xml`, now a release version,
   `CITATION.cff`, `SECURITY.md`, `SUPPORT.md`, the install snippets);
   `scripts/verify-release-versions` fails CI on any mismatch.

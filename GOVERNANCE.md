@@ -52,7 +52,7 @@ marked **Not yet arranged** have no continuity arrangement today.
 | Source code | Apache-2.0 OR MIT, public history | Anyone can fork and continue it. |
 | GitHub repository | Owned by the maintainer's account | **Not yet arranged:** no second owner or organisation. |
 | Maven Central namespace `com.pain001` | Verified on the Central Portal by the maintainer | **Not yet arranged:** no second account has publish rights on the namespace. |
-| Central Portal token and GPG signing key | Repository secrets set by the maintainer (`DEVELOPMENT.md` lists them) | **Not yet arranged:** no documented key escrow; a successor would publish under a new GPG key announced in `KEYS.asc`. |
+| Central Portal token and GPG signing key | `release` environment secrets set by the maintainer (`DEVELOPMENT.md` lists them), also held in the maintainer's password vault | **Not yet arranged:** no escrow with a second person; a successor would publish under a new GPG key that replaces `MAVEN-SIGNING-KEY.asc` in a reviewed change. |
 | Tag-signing SSH key | Listed in `KEYS.asc` | A new maintainer signs with their own key, added to `KEYS.asc` in a reviewed change. |
 | Release process | `DEVELOPMENT.md` and `.github/workflows/release.yml` (with a dry-run mode) | Anyone with repository and namespace rights can release from the documented process. |
 | Domain `pain001.com` | Registered by the maintainer | Governed by the core project's plan ([`pain001` GOVERNANCE.md](https://github.com/sebastienrousseau/pain001/blob/main/GOVERNANCE.md)). |

@@ -141,7 +141,7 @@ Nothing below is created by any workflow or agent.
 | Settings, Environments | `release` | Required reviewer: the maintainer; deployment branch rule: tags `v*` |
 | `release` environment secret | `CENTRAL_TOKEN_USERNAME` | Central Portal user token name (central.sonatype.com, Account, Generate User Token) |
 | `release` environment secret | `CENTRAL_TOKEN_PASSWORD` | Central Portal user token password |
-| `release` environment secret | `GPG_PRIVATE_KEY` | ASCII-armoured private key that signs the Maven artifacts; its public key published to `keys.openpgp.org` and in `KEYS.asc` |
+| `release` environment secret | `GPG_PRIVATE_KEY` | ASCII-armoured private key that signs the Maven artifacts; its public key is on `keyserver.ubuntu.com` and `keys.openpgp.org` and committed as `MAVEN-SIGNING-KEY.asc` (`KEYS.asc` holds the SSH keys that sign commits and tags) |
 | `release` environment secret | `GPG_PASSPHRASE` | That key's passphrase |
 | Settings, Pages | Source: GitHub Actions | Lets `docs.yml` deploy the manual (`gh api -X POST repos/sebastienrousseau/pain001-sdk-java/pages -f build_type=workflow`) |
 
