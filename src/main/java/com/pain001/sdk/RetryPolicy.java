@@ -128,8 +128,8 @@ public final class RetryPolicy {
   /** {@code Retry-After} as delta-seconds or an HTTP date; empty when it is neither. */
   Optional<Duration> parseRetryAfter(String value) {
     String text = value.strip();
-    if (text.matches("\\d{1,9}")) {
-      return Optional.of(Duration.ofSeconds(Long.parseLong(text)));
+    if (text.matches("[0-9]{1,9}")) {
+      return Optional.of(Duration.ofSeconds(digits(text)));
     }
     try {
       Instant at = ZonedDateTime.parse(text, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant();
@@ -138,6 +138,15 @@ public final class RetryPolicy {
     } catch (DateTimeParseException e) {
       return Optional.empty();
     }
+  }
+
+  /** The value of 1 to 9 ASCII digits; it fits a long, so nothing can overflow or throw. */
+  private static long digits(String text) {
+    long value = 0;
+    for (int i = 0; i < text.length(); i++) {
+      value = value * 10 + (text.charAt(i) - '0');
+    }
+    return value;
   }
 
   void sleep(Duration duration) throws InterruptedException {

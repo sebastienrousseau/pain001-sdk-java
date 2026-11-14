@@ -246,4 +246,14 @@ class RetryPolicyTest {
         () -> policy().initialBackoff(one).maxBackoff(Duration.ofMillis(10)).build());
     assertEquals(1, policy().maxAttempts(1).build().maxAttempts());
   }
+
+  @Test
+  void retryAfterSecondsAreAsciiDigitsOnly() {
+    RetryPolicy policy = policy().build();
+    assertEquals(Optional.of(Duration.ofSeconds(123456789)), policy.parseRetryAfter("123456789"));
+    assertEquals(Optional.of(Duration.ZERO), policy.parseRetryAfter("0"));
+    for (String bad : List.of("1234567890", "-5", "+5", "\u0663", "1.5", "", "soon")) {
+      assertEquals(Optional.empty(), policy.parseRetryAfter(bad), bad);
+    }
+  }
 }
