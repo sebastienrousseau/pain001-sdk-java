@@ -137,11 +137,7 @@ public final class Pain001Client {
    * @param schematron a Schematron preset ({@code sepa}, {@code fednow}, {@code cbpr}), or null
    */
   public CheckResponse check(String xml, String scheme, String schematron) {
-    ObjectNode request = Json.object();
-    request.put("xml", xml);
-    putIfPresent(request, "scheme", scheme);
-    putIfPresent(request, "schematron", schematron);
-    return CheckResponse.from(call("POST", "/api/v1/check", request));
+    return CheckResponse.from(call("POST", "/api/v1/check", checkPayload(xml, scheme, schematron)));
   }
 
   /** {@code GET /api/v1/faces}: the faces the server can project to. */
@@ -167,16 +163,8 @@ public final class Pain001Client {
    */
   public FaceResponse projectFace(
       String face, String xml, String version, Map<String, ?> bindings) {
-    if (face == null || !FACE_NAME.matcher(face).matches()) {
-      throw new IllegalArgumentException("face must be a plain name such as berlin_group");
-    }
-    ObjectNode request = Json.object();
-    request.put("xml", xml);
-    putIfPresent(request, "version", version);
-    if (bindings != null) {
-      request.set("bindings", Json.toNode(bindings));
-    }
-    return FaceResponse.from(call("POST", "/api/v1/faces/" + face, request));
+    String path = facePath(face);
+    return FaceResponse.from(call("POST", path, facePayload(xml, version, bindings)));
   }
 
   /**
@@ -255,7 +243,8 @@ public final class Pain001Client {
     }
   }
 
-  private HttpRequest buildRequest(String method, String path, JsonNode body) {
+  /** The request {@link #request} sends; package-private for the client-side benchmarks. */
+  HttpRequest buildRequest(String method, String path, JsonNode body) {
     Objects.requireNonNull(method, "method");
     if (path == null || !path.startsWith("/")) {
       throw new IllegalArgumentException("path must start with /");
@@ -302,7 +291,36 @@ public final class Pain001Client {
     return body;
   }
 
-  private static ObjectNode filePayload(
+  /** The {@code /api/v1/check} body. */
+  static ObjectNode checkPayload(String xml, String scheme, String schematron) {
+    ObjectNode payload = Json.object();
+    payload.put("xml", xml);
+    putIfPresent(payload, "scheme", scheme);
+    putIfPresent(payload, "schematron", schematron);
+    return payload;
+  }
+
+  /** The {@code /api/v1/faces/{face}} path, after checking the name is plain. */
+  static String facePath(String face) {
+    if (face == null || !FACE_NAME.matcher(face).matches()) {
+      throw new IllegalArgumentException("face must be a plain name such as berlin_group");
+    }
+    return "/api/v1/faces/" + face;
+  }
+
+  /** The {@code /api/v1/faces/{face}} body. */
+  static ObjectNode facePayload(String xml, String version, Map<String, ?> bindings) {
+    ObjectNode payload = Json.object();
+    payload.put("xml", xml);
+    putIfPresent(payload, "version", version);
+    if (bindings != null) {
+      payload.set("bindings", Json.toNode(bindings));
+    }
+    return payload;
+  }
+
+  /** The {@code /api/v1/ui/validate} and {@code /api/v1/ui/generate} body. */
+  static ObjectNode filePayload(
       String content, String filename, String messageType, String scheme) {
     ObjectNode payload = Json.object();
     payload.put("filename", filename);
