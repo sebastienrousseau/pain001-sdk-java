@@ -87,7 +87,7 @@ class RetryPolicyTest {
     assertEquals(Optional.of(Duration.ofSeconds(3)), policy.delay(64, Optional.empty()));
     Duration century = Duration.ofDays(36_500);
     RetryPolicy huge = policy().initialBackoff(century).maxBackoff(century).build();
-    assertEquals(Optional.of(century), huge.delay(2, Optional.empty()));
+    assertEquals(Optional.of(century), huge.delay(3, Optional.empty()));
   }
 
   @Test
