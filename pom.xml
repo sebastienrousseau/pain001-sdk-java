@@ -44,6 +44,7 @@
     <jackson.version>2.23.0</jackson.version>
     <junit.version>6.1.3</junit.version>
     <jazzer.version>0.30.0</jazzer.version>
+    <jmh.version>1.37</jmh.version>
   </properties>
 
   <dependencyManagement>
@@ -144,6 +145,11 @@
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>0.8.16</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>3.7.0</version>
         </plugin>
         <plugin>
           <groupId>org.cyclonedx</groupId>
@@ -252,6 +258,11 @@
             <ruleset>config/pmd/complexity.xml</ruleset>
           </rulesets>
           <includeTests>true</includeTests>
+          <!-- JMH writes its generated harness here under -Pbench; it is
+               not our code. -->
+          <excludeRoots>
+            <excludeRoot>target/generated-test-sources</excludeRoot>
+          </excludeRoots>
           <failurePriority>5</failurePriority>
           <printFailingErrors>true</printFailingErrors>
           <linkXRef>false</linkXRef>
@@ -267,4 +278,84 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <!-- JMH benchmarks (src/bench/), run by `make bench`. Only this
+           profile adds JMH, as test-scope dependencies, so the published
+           artifact's dependencies do not change. -->
+      <id>bench</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.openjdk.jmh</groupId>
+          <artifactId>jmh-core</artifactId>
+          <version>${jmh.version}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>bench-sources</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/bench/java</source>
+                  </sources>
+                </configuration>
+              </execution>
+              <execution>
+                <id>bench-resources</id>
+                <phase>generate-test-resources</phase>
+                <goals>
+                  <goal>add-test-resource</goal>
+                </goals>
+                <configuration>
+                  <resources>
+                    <resource>
+                      <directory>src/bench/resources</directory>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>default-testCompile</id>
+                <configuration>
+                  <!-- With the JMH processor on the path, javac's
+                       "processing" lint warns that nothing claimed the
+                       JUnit and Jazzer annotations, which is expected.
+                       That one category is off for test sources in this
+                       profile; every other warning still fails. -->
+                  <compilerArgs combine.self="override">
+                    <arg>-Xlint:all,-processing</arg>
+                    <arg>-Werror</arg>
+                  </compilerArgs>
+                  <annotationProcessorPaths>
+                    <path>
+                      <groupId>org.openjdk.jmh</groupId>
+                      <artifactId>jmh-generator-annprocess</artifactId>
+                      <version>${jmh.version}</version>
+                    </path>
+                  </annotationProcessorPaths>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

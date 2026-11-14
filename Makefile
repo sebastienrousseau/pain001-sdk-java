@@ -21,10 +21,11 @@ TC := -Daether.artifactResolver.postProcessor.trustedChecksums
 JAVA_FILES := $(shell find src examples -name '*.java' | LC_ALL=C sort)
 EXAMPLE_CP = target/classes:$$(cat target/classpath.txt)
 EXAMPLES := $(sort $(basename $(notdir $(wildcard examples/*.java))))
+LOCK_PROFILES := bench
 FUZZ_TARGETS ?= ResponseDecodingFuzzTest ClientResponseFuzzTest
 FUZZ_TIME ?= 60s
 
-.PHONY: help check format-check size verify build test lint conformance classpath example-compile example examples demo fuzz lock sbom audit clean
+.PHONY: help check format-check size verify build test lint conformance classpath example-compile example examples bench-build bench bench-smoke demo fuzz lock sbom audit clean
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /: /'
@@ -79,6 +80,27 @@ examples: example-compile ## Run every example against PAIN001_BASE_URL; fails o
 	  java -cp "target/example-classes:$(EXAMPLE_CP)" "$$e" || { echo "example $$e failed"; exit 1; }; \
 	done
 
+BENCH_CP = target/test-classes:target/classes:$$(cat target/bench-classpath.txt)
+BENCH_OPTS ?= -f 1 -wi 3 -w 1s -i 5 -r 1s
+BENCH_SMOKE_OPTS := -f 1 -wi 0 -i 1 -r 100ms
+
+bench-build: ## Compile the JMH benchmarks (src/bench, profile bench)
+	$(MVN) -B -q -Pbench -DskipTests test-compile dependency:build-classpath \
+	  -Dmdep.outputFile=target/bench-classpath.txt -Dmdep.includeScope=test
+
+# The loopback benchmarks need PAIN001_BASE_URL; without it they are
+# skipped with a message and only the client-side ones run.
+bench-run = \
+	if [ -n "$$PAIN001_BASE_URL" ]; then sel='Benchmark'; \
+	else echo "PAIN001_BASE_URL unset: skipping LoopbackBenchmark (client-side only)"; sel='ClientSideBenchmark'; fi; \
+	java -cp "$(BENCH_CP)" org.openjdk.jmh.Main "$$sel" $(1)
+
+bench: bench-build ## Every benchmark, full run (BENCH_OPTS); results in target/jmh.txt
+	@$(call bench-run,$(BENCH_OPTS) -rf text -rff target/jmh.txt)
+
+bench-smoke: bench-build ## Every benchmark once, briefly: kept compiling and running, not asserted
+	@$(call bench-run,$(BENCH_SMOKE_OPTS))
+
 fuzz: ## Fuzz each Jazzer target for FUZZ_TIME (60s); findings land in its seed directory
 	@for t in $(FUZZ_TARGETS); do \
 	  JAZZER_FUZZ=1 JAZZER_MAX_DURATION=$(FUZZ_TIME) $(MVN) -B test -Dtest="$$t" || exit 1; \
@@ -95,7 +117,7 @@ demo: build example-compile ## Render .github/demo.gif with vhs against PAIN001_
 
 lock: ## Re-record .mvn/checksums from a clean local repository
 	rm -rf .mvn/checksums $(LOCK_REPO)
-	$(MVN) -B -q -Dmaven.repo.local=$(LOCK_REPO) $(TC).record=true \
+	$(MVN) -B -q -Dmaven.repo.local=$(LOCK_REPO) $(TC).record=true -P$(LOCK_PROFILES) \
 	  clean verify pmd:check dependency:build-classpath cyclonedx:makeBom \
 	  -Dmdep.outputFile=target/classpath.txt -DoutputFormat=json -DincludeTestScope=true
 	rm -rf $(LOCK_REPO)

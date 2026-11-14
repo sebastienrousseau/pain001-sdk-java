@@ -100,6 +100,8 @@ f109fb70888e5ec9b42ffd42d2324004a35f9b0eb64ec89092134f0dee3128cc  eu/maveniverse
 ec0c2694d9958218506861f70a4c202efa746d7675b3a61ddcd95be43715f6ab  eu/maveniverse/maven/parent/parent/52/parent-52.pom
 91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff  javax/inject/javax.inject/1/javax.inject-1.jar
 943e12b100627804638fa285805a0ab788a680266531e650921ebfe4621a8bfa  javax/inject/javax.inject/1/javax.inject-1.pom
+df26cc58f235f477db07f753ba5a3ab243ebe5789d9f89ecf68dd62ea9a66c28  net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar
+6a67763b76afcd9c80b95e5c5e24782d18cc1b0e3d9b454ad3f8754c76b76815  net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.pom
 98c3a91e6e5aaf9b3e2b37601e04b214a6e67098493cdd8232fcb705fddcb674  net/sf/saxon/Saxon-HE/12.5/Saxon-HE-12.5.jar
 e0f3a8551db88b657e7856635b714eb630456405eeb2b161790eb28f18769ad7  net/sf/saxon/Saxon-HE/12.5/Saxon-HE-12.5.pom
 73089de9d6bfe41e2c4e5780f0465c5e647a048c486f942070fbccceec666a52  net/sourceforge/pmd/pmd-core/7.17.0/pmd-core-7.17.0.jar
@@ -155,6 +157,8 @@ d7463906ab3081ff42cf3531eb793b240fb0ca3f1c26fd58fc84fb23032a72b7  org/apache/com
 7ca83b2709c1e7a9e03b576cd41422190379489a80866e542f8c8b955411a2aa  org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.pom
 a2af247ec4db6eb8947e18e23e0433e4871a7c5d0a40e1f92e46ede54ae1defe  org/apache/commons/commons-lang3/3.21.0/commons-lang3-3.21.0.jar
 9420ac3c5efb5bcf804552a7bec00a2d857120977fc12151f7606a67ba7a184d  org/apache/commons/commons-lang3/3.21.0/commons-lang3-3.21.0.pom
+1e56d7b058d28b65abd256b8458e3885b674c1d588fa43cd7d1cbb9c7ef2b308  org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar
+fad72336ea7d7dd06da103144e3740db508fa4b17d9c54d7847737edc24a7e60  org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.pom
 31a68daabb4b361453788b9045ac87a6ae87c705e578facd99e4d9ddb6a481e9  org/apache/commons/commons-parent/105/commons-parent-105.pom
 24f2e52bde65e2dc9cfcebb2fc22d8de0edb3726925ccf80b13db4eeb515a302  org/apache/commons/commons-parent/14/commons-parent-14.pom
 fb8c5e55e30a7addb4ff210858a0e8d2494ed6757bbe19012da99d51586c3cbb  org/apache/commons/commons-parent/22/commons-parent-22.pom
@@ -353,6 +357,9 @@ b509448ac506d607319f182537f0b35d71007582ec741832a1f111e5b5b70b38  org/apiguardia
 1c09f6c04c905e1e5cdb22d5dfa5f11a496e19e881de0850b523ed53a0519f5b  org/assertj/assertj-bom/3.27.7/assertj-bom-3.27.7.pom
 508c83c62c344f6f7ee28f47b88a8797d6116d043bfd1ca0576c828dd1df2880  org/checkerframework/checker-qual/3.49.5/checker-qual-3.49.5.jar
 57ef5a1efc69d1470e45d0d1230880b6def5f17dcc55597ec43e37444c149262  org/checkerframework/checker-qual/3.49.5/checker-qual-3.49.5.pom
+f366631cd160ffc5936efb9f86ceca5e1ed568552f7492842a459747e73d197e  org/codehaus/mojo/build-helper-maven-plugin/3.7.0/build-helper-maven-plugin-3.7.0.jar
+5d61de9577ce1095ab30c0f1f458f4667ea4b7cb8026b68da160273c462d1e07  org/codehaus/mojo/build-helper-maven-plugin/3.7.0/build-helper-maven-plugin-3.7.0.pom
+888b0162ad7fabdeb6ee34ff6123025bffe34e064761da962e87de5c8cce5d39  org/codehaus/mojo/mojo-parent/97/mojo-parent-97.pom
 53a2103d9257c801a8fc9c211d9fedea7e3ee1bf516bbbc28021ef45c1a219c5  org/codehaus/plexus/plexus-archiver/4.10.4/plexus-archiver-4.10.4.pom
 d24c3ca2185009d81b1ce3ee90cff1cfeab53b70fadbb3ae0c02a867d7c96034  org/codehaus/plexus/plexus-archiver/4.11.0/plexus-archiver-4.11.0.jar
 22a5a7c25e445560604cb0e1e5cc3d3af2669a0549c3d7db8265dcf8d8ebb4e3  org/codehaus/plexus/plexus-archiver/4.11.0/plexus-archiver-4.11.0.pom
@@ -501,6 +508,11 @@ a5a3a1aec96113b1e953545c3d8c5117ff0220c56f7293c6fff7d35b1cd37c14  org/junit/plat
 d8531a746c988f7f68ed5f188cdea945006aea993ec5df9e524e0d27d61491da  org/mockito/mockito-bom/4.11.0/mockito-bom-4.11.0.pom
 2427fdcbc149ca0a25ccfbb7c71b01f39ad42708773a47816cd2342861766b63  org/mozilla/rhino/1.7.15/rhino-1.7.15.jar
 fc5cc95ec945d7509f1b36321393d55ecd1e075e62fe993c848bf31e6139030f  org/mozilla/rhino/1.7.15/rhino-1.7.15.pom
+dc0eaf2bbf0036a70b60798c785d6e03a9daf06b68b8edb0f1ba9eb3421baeb3  org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar
+04453be006f06f86d7c43f3c492f7b4eb3362680cae4f1ee80ba65db23373f5a  org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.pom
+6a5604b5b804e0daca1145df1077609321687734a8b49387e49f10557c186c77  org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar
+e4240265b5425c39f1cf2733afda3aec3b139dd193e794d55137bec9240ff476  org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.pom
+0c24f216f3637dde7639114f70273a697f8546f7a4c6d5acd4cc6daee9bef4c9  org/openjdk/jmh/jmh-parent/1.37/jmh-parent-1.37.pom
 48e2df636cab6563ced64dcdff8abb2355627cb236ef0bf37598682ddf742f1b  org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar
 9bf7cffc410f3e8372c2522578df9ca56d9d43bd937e30948706c232a943b355  org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.pom
 8e174bf73b59be9e1337ffb585ebd05a09117f3fad5829e520b5e743213a084a  org/ow2/asm/asm-bom/9.11.1/asm-bom-9.11.1.pom
