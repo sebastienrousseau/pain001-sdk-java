@@ -19,6 +19,7 @@
   "ignores": [
     "node_modules/**",
     "target/**",
+    "site/**",
     "conformance/**",
     "CHANGELOG.md"
   ]

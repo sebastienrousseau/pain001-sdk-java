@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://github.com/sebastienrousseau/pain001-sdk-java/actions"><img src="https://img.shields.io/github/actions/workflow/status/sebastienrousseau/pain001-sdk-java/ci.yml?style=for-the-badge&logo=github" alt="Build" height="28" /></a>
   <a href="https://central.sonatype.com/artifact/com.pain001/pain001-sdk"><img src="https://img.shields.io/maven-central/v/com.pain001/pain001-sdk?style=for-the-badge&color=fc8d62&logo=apachemaven" alt="Registry" height="28" /></a>
-  <a href="#documentation"><img src="https://img.shields.io/badge/docs-javadoc-blue?style=for-the-badge&labelColor=555555&logo=readthedocs" alt="Docs" height="28" /></a>
+  <a href="https://sebastienrousseau.github.io/pain001-sdk-java/api/"><img src="https://img.shields.io/badge/docs-javadoc-blue?style=for-the-badge&labelColor=555555&logo=readthedocs" alt="Docs" height="28" /></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/sebastienrousseau/pain001-sdk-java"><img src="https://img.shields.io/ossf-scorecard/github.com/sebastienrousseau/pain001-sdk-java?style=for-the-badge&label=OpenSSF%20Scorecard&logo=openssf" alt="OpenSSF Scorecard" height="28" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg?style=for-the-badge" alt="License: Apache-2.0 OR MIT" height="28" /></a>
   <a href="https://github.com/sebastienrousseau/pain001-sdk-java/blob/main/docs/POLICIES.md"><img src="https://img.shields.io/badge/Java-17%2B-93450a.svg?style=for-the-badge&logo=openjdk" alt="Java 17 or newer" height="28" /></a>
@@ -29,7 +29,7 @@
 
 **Getting started**
 
-- [Install](#install): Maven coordinates (not yet on Maven Central)
+- [Install](#install): Maven Central (`com.pain001:pain001-sdk`), Gradle, or from source
 - [Requirements](#requirements): toolchain floor, platforms
 - [Quick Start](#quick-start): generate a pain.001 file from a CSV in one call
 
@@ -40,16 +40,16 @@
 **Library reference**
 
 - [Capabilities at a glance](#capabilities-at-a-glance): the current surface by theme
-- [Ecosystem comparison](#ecosystem-comparison): what this client is and is not
-- [Benchmarks](#benchmarks): none measured, and why
+- [Ecosystem comparison](#ecosystem-comparison): short matrix; full table at [`docs/COMPARISON.md`](docs/COMPARISON.md)
+- [Benchmarks](#benchmarks): headline numbers; full table at [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)
 - [Features](#features): the client's methods and types
-- [Configuration](#configuration): base URL, API key, timeout
+- [Configuration](#configuration): base URL, API key, timeout, retries
 - [Examples](#examples): runnable example index
 
 **Operational**
 
 - [When not to use pain001-sdk-java](#when-not-to-use-pain001-sdk-java): limitations
-- [Development](#development): make targets, CI
+- [Development](#development): make targets, fuzzing, CI
 - [Security](#security): guarantees and compliance
 - [Documentation](#documentation): all reference docs
 - [Stability guarantees](#stability-guarantees): SemVer axis, output stability, minimum toolchain discipline
@@ -65,14 +65,22 @@
 <dependency>
   <groupId>com.pain001</groupId>
   <artifactId>pain001-sdk</artifactId>
-  <version>0.0.87</version>
+  <version>0.0.88</version>
 </dependency>
 ```
 
-The package is not yet on Maven Central; the coordinates above are the
-ones the first release (0.0.87, in lockstep with the pain001 suite) will
-use. Until then, build it from source and install it into your local
-Maven repository:
+Gradle (Kotlin DSL):
+
+```kotlin
+implementation("com.pain001:pain001-sdk:0.0.88")
+```
+
+0.0.88 is the first release published to Maven Central, in lockstep
+with the pain001 suite. Each release is signed with GPG, ships a
+CycloneDX SBOM and `SHA256SUMS` on its GitHub release, and carries a
+build provenance attestation ([`docs/packaging.md`](docs/packaging.md)).
+
+From source, into your local Maven repository:
 
 ```sh
 git clone https://github.com/sebastienrousseau/pain001-sdk-java
@@ -88,10 +96,10 @@ The one runtime dependency is Jackson databind (`com.fasterxml.jackson.core:jack
 
 - Java 17 or newer; CI builds and tests on Temurin 17 and 21 on Linux
   ([toolchain policy](docs/POLICIES.md)).
-- Maven 3.6.3 or newer to build from source.
+- Maven 3.9.0 or newer to build from source (`./mvnw` brings 3.10.0).
 - A running pain001 server (`pain001 serve`, from `pip install 'pain001[api]'`)
   to call. This SDK is a client: the generation and validation happen in
-  the server.
+  the server. CI tests against pain001 0.0.87, the latest released core.
 
 ---
 
@@ -142,7 +150,7 @@ the clients agree on what the server does.
 | :--- | :--- | :--- |
 | [`pain001`](https://github.com/sebastienrousseau/pain001) | Generates and validates ISO 20022 payment files; `pain001 serve` is the REST API this SDK calls | The engine behind every client |
 | **`pain001-sdk-java`** | Typed Java client for the REST API | JVM services that produce or check payment files |
-| Sibling SDKs (Go, Rust, .NET, C++) | Typed clients for the same API, proven by the same kit | Services in those languages |
+| [`pain001-sdk-go`](https://github.com/sebastienrousseau/pain001-sdk-go), [`-rust`](https://github.com/sebastienrousseau/pain001-sdk-rust), [`-dotnet`](https://github.com/sebastienrousseau/pain001-sdk-dotnet), [`-cpp`](https://github.com/sebastienrousseau/pain001-sdk-cpp) | Typed clients for the same API, proven by the same kit | Services in those languages |
 | [`pain001-mcp`](https://github.com/sebastienrousseau/pain001-mcp) | MCP server exposing pain001 validation, generation and inspection | Agent workflows over payment files |
 | [`pain001-lsp`](https://github.com/sebastienrousseau/pain001-lsp) | Language server for pain001 input files | Editor support |
 
@@ -165,37 +173,49 @@ the clients agree on what the server does.
 
 ## Ecosystem comparison
 
-This SDK is a client for the pain001 server, not a standalone ISO 20022
-library: it holds no schemas and runs no validation itself. No
-comparison with Java ISO 20022 libraries has been made.
+The suite's five SDKs share one method surface and run core's conformance kit against a live `pain001 serve` in CI. Core's CI also generates a Python client from the OpenAPI document, which it imports but does not run against the kit.
 
-| Project | Runs the ISO 20022 logic | Needs a pain001 server | Runtime dependencies |
-| :--- | :---: | :---: | :---: |
-| **pain001-sdk-java** | No (the server does) | Yes | Jackson databind |
+| Project | Language (minimum) | Conformance kit in CI | Types | Runtime dependencies | Call model |
+| :--- | :---: | :---: | :---: | :--- | :--- |
+| pain001-sdk-go | Go 1.26 | Yes | Hand-written | None (standard library) | Blocking, `context.Context` |
+| **pain001-sdk-java** | **Java 17** | **Yes** | **Hand-written** | **Jackson databind** | **Blocking** |
+| pain001-sdk-rust | Rust 1.85 | Yes | Hand-written (serde) | ureq, serde, serde_json, thiserror | Blocking |
+| pain001-sdk-dotnet | .NET 10 | Yes | Hand-written | None | async/await, `CancellationToken` |
+| pain001-sdk-cpp | C++17 | Yes | Hand-written | libcurl, nlohmann/json | Blocking |
+| openapi-generator client (core CI artifact) | Python | No, CI imports it only | Generated | Generator's | Blocking |
+| Raw HTTP | Any | No | None | Your HTTP client | Yours |
 
-There is no `docs/COMPARISON.md` yet, because there is no comparison to record.
+See [`docs/COMPARISON.md`](docs/COMPARISON.md) for the evidence and complete matrix.
 
 ---
 
 ## Benchmarks
 
-None measured. Each call is one HTTP round trip to the server, so the
-time is the server's work plus the network; the client adds JSON
-serialisation of the request and response. Measure against your own
-server and data.
+JMH measures every public method two ways: the client's own cost with no
+network (building each request, decoding each response, from the kit's
+fixtures) and a full round trip to `pain001 serve` on loopback. The
+client's share is microseconds; the time a caller waits is the server's.
+These were taken on a shared, heavily loaded machine, so treat them as
+rough.
 
 | Scenario | Result | Environment |
 | :--- | ---: | :--- |
-| Not measured | n/a | n/a |
+| Build the `validate` request (5-row kit CSV) | 17.0 µs ± 9.6 | Apple A18 Pro, Temurin 21.0.13, JMH 1.37 |
+| Decode the `generate` answer (4.5 KB) | 27.0 µs ± 12.5 | same |
+| Decode the `projectFace` answer (5.6 KB) | 58.2 µs ± 21.2 | same |
+| `health()` round trip | 4.9 ms ± 6.6 | same, pain001 0.0.87 on 127.0.0.1 |
+| `validate(...)` round trip | 26.8 ms ± 51.7 | same |
+| `generate(...)` round trip | 375 ms ± 543 | same |
 
-There is no `docs/BENCHMARKS.md` yet, because there are no results.
+See [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) for methodology and full results.
 
 ---
 
 ## Features
 
 - **One client, immutable and thread-safe.** `Pain001Client` wraps one
-  `java.net.http.HttpClient` (HTTP/1.1, no redirects followed).
+  `java.net.http.HttpClient` (HTTP/1.1, no redirects followed) and sends
+  `User-Agent: pain001-sdk-java/<version>` (`Pain001Client.VERSION`).
 - **Typed responses as records:** `HealthResponse`, `ValidationResponse`,
   `GenerateResponse` (row errors as `RowError`: field, message, value), `CheckResponse` (with `CheckFinding`), `FaceInfo`,
   `FaceResponse` (with `LossReport` and the target payload as a Jackson
@@ -276,45 +296,64 @@ same in its conformance job, so they cannot rot.
 ```bash
 git clone https://github.com/sebastienrousseau/pain001-sdk-java
 cd pain001-sdk-java
-make check                 # format, file size, mvn verify, example compile
-
-# Conformance kit and typed tests against a live server
-pip install 'pain001[api]==0.0.87'
-pain001 serve --host 127.0.0.1 --port 8000 &
-PAIN001_BASE_URL=http://127.0.0.1:8000 make conformance
+make check          # versions, format, file size, mvn verify (tests, 100 % coverage, PMD), examples compile
+make regression     # installs the pinned server, then the gate, conformance kit, examples, bench smoke
+make bench          # JMH: client-side, plus loopback with PAIN001_BASE_URL set
+make fuzz           # each Jazzer target for 60 s
+make manual         # MkDocs strict build with the Javadoc
+make docs-lint      # markdownlint, codespell, REUSE, lychee
 ```
 
-`make check` runs a whitespace format check, the 500-line file limit and
-`mvn -B verify`: javac with `-Xlint:all -Werror`, the unit tests (a stub
-HTTP server, no network) and PMD with the suite's complexity ceilings
-(cyclomatic 10, cognitive 15, 60 statements per method). The conformance
-and typed tests skip unless `PAIN001_BASE_URL` is set. CI runs the build
-on Java 17 and 21, then the full kit against `pain001 serve` installed
-from the hash-pinned `ci/server-requirements.txt`. See
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
+`make check` runs everything CI's build job runs, without a server:
+`javac -Xlint:all -Werror`, the unit tests and fuzz seeds, JaCoCo at
+100 % line and branch coverage, and PMD with the suite's complexity
+ceilings (cyclomatic 10, cognitive 15, 60 statements per method).
+`make regression` adds a real `pain001 serve` on a free loopback port,
+installed from the hash-pinned `ci/server-requirements.txt`, and is what
+the CI conformance job runs. Every gate and how to reproduce it is in
+[`DEVELOPMENT.md`](DEVELOPMENT.md).
 
 ---
 
 ## Security
 
+Report a vulnerability privately first, through GitHub's private
+vulnerability reporting (see below); never in a public issue.
+
 The client sends what you give it to the server you configure, over
-http or https, and does not follow redirects. It writes no files, logs
-nothing, and keeps the API key out of exception messages. Use https and
+http or https, and does not follow redirects, so an API key never
+reaches another host. It writes no files, logs nothing, and keeps
+request and response content out of exception messages. Use https and
 an API key for any server that is not on loopback. The test data in
 `conformance/` is synthetic.
 
-Report vulnerabilities according to [`SECURITY.md`](SECURITY.md).
+Responses are untrusted input. Two Jazzer fuzz targets
+(`src/fuzz/java/`) feed arbitrary bytes to the response decoding and
+answer every typed call with an arbitrary status and body; their
+committed seeds, including every past finding, replay in every build,
+and CI fuzzes each target for 60 seconds on every pull request. The
+project is not in OSS-Fuzz. Dependencies are pinned by SHA-256
+(`.mvn/checksums/`) and audited with OSV-Scanner on every push.
 
 ---
 
 ## Documentation
 
-[Javadoc in the sources](src/main/java/com/pain001/sdk/package-info.java) (no rendered site is published yet) ·
-[Conformance kit](conformance/README.md) ·
-[Developer guide](CONTRIBUTING.md) ·
+[User manual](https://sebastienrousseau.github.io/pain001-sdk-java/) ·
+[API reference (Javadoc)](https://sebastienrousseau.github.io/pain001-sdk-java/api/) ·
+[Developer docs](DEVELOPMENT.md) ·
+[Ecosystem map](docs/COMPARISON.md)
+
+Also: [Architecture](docs/ARCHITECTURE.md) ·
+[Decisions](docs/adr/README.md) ·
+[Benchmarks](docs/BENCHMARKS.md) ·
+[Packaging](docs/packaging.md) ·
+[Roadmap](docs/ROADMAP.md) ·
 [Policies](docs/POLICIES.md) ·
+[Conformance kit](conformance/README.md) ·
 [Changelog](CHANGELOG.md) ·
-[Agent rules](AGENTS.md)
+[Governance](GOVERNANCE.md) ·
+[Support](SUPPORT.md)
 
 ---
 
@@ -322,10 +361,14 @@ Report vulnerabilities according to [`SECURITY.md`](SECURITY.md).
 
 The project is pre-1.0 and versions advance in `0.0.1` steps, in lockstep
 with the pain001 suite: SDK 0.0.N vendors the conformance kit from core
-0.0.N and is tested against that server. The breaking axis is the public
-API of `com.pain001.sdk` (method names, record components, exception
-types); the changelog calls out any change to it. The Java floor moves
-only as described in the [toolchain policy](docs/POLICIES.md).
+0.0.N. The breaking axis is the public API of `com.pain001.sdk` (method
+names and signatures, record components, exception types and their
+hierarchy); the changelog calls out any change to it, and a japicmp
+check in CI compares each build with the last release on Maven Central.
+The client sends the request shapes the kit pins; a change to what it
+sends or to which exception a given answer raises is a breaking change
+even when no signature moves. The Java floor moves only as described in
+the [toolchain policy](docs/POLICIES.md), announced in the changelog.
 
 ---
 

@@ -14,8 +14,11 @@ them too. Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 - The version is `0.0.x`, moves by `0.0.1`, and ships in lockstep with
   the pain001 suite. Never bump it as a side effect of a change; the
   maintainer decides when a release opens.
-- It is restated in `pom.xml` and `CITATION.cff`, with a `## [0.0.N]`
-  heading in `CHANGELOG.md`.
+- It is restated in `pom.xml`, `Pain001Client.VERSION` (the
+  User-Agent), `CITATION.cff`, the `SECURITY.md` and `SUPPORT.md`
+  tables and every install snippet, with a `## [0.0.N]` heading in
+  `CHANGELOG.md`. `scripts/verify-release-versions` (in `make check`)
+  fails on any mismatch.
 - Work for the next version happens on `feat/v<next-version>`, the only
   pull request into `main`.
 
@@ -27,11 +30,15 @@ them too. Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 ## The gate
 
-- `make check` runs every local gate CI runs: whitespace format, the
-  500-line file limit and `mvn -B verify` (javac `-Xlint:all -Werror`,
-  unit tests, PMD complexity ceilings). With `PAIN001_BASE_URL` set,
-  `make conformance` runs the kit and the typed tests against that
-  server. "It compiles" is not done.
+- `make check` runs every local gate CI's build job runs: versions,
+  whitespace format, the 500-line file limit and `mvn -B verify` (javac
+  `-Xlint:all -Werror`, unit tests and fuzz seeds, JaCoCo at 100 % line
+  and branch coverage, PMD complexity ceilings). `make regression` adds
+  a real server: the conformance kit, every example and the benchmark
+  smoke run, as the CI conformance job does. "It compiles" is not done;
+  see [DEVELOPMENT.md](DEVELOPMENT.md) for every gate.
+- A dependency or plugin change needs `make lock`, a spot-check of new
+  hashes against Maven Central, and an explanation in the commit body.
 - Jackson stays behind the package-private `Json` class and the
   `JsonNode` values the public API already exposes; add no other
   runtime dependency.

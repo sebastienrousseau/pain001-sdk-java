@@ -126,8 +126,10 @@ off (`git commit -s`, see [DCO.txt](DCO.txt)).
 
 ## Versioning
 
-The version lives in `pom.xml` and `CITATION.cff`, with a `## [0.0.N]`
-heading in `CHANGELOG.md`. **Versions increment by 0.0.1**, in lockstep
+The version lives in `pom.xml`, `Pain001Client.VERSION`, `CITATION.cff`,
+the `SECURITY.md` and `SUPPORT.md` tables and the install snippets, with
+a `## [0.0.N]` heading in `CHANGELOG.md`; `scripts/verify-release-versions`
+fails when any of them disagrees. **Versions increment by 0.0.1**, in lockstep
 with the pain001 suite. `0.1.0` follows `0.0.999`, not `0.0.9`.
 
 ## Licence

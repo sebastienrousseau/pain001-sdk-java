@@ -23,11 +23,12 @@ EXAMPLE_CP = target/classes:$$(cat target/classpath.txt)
 EXAMPLES := $(sort $(basename $(notdir $(wildcard examples/*.java))))
 LOCK_PROFILES := bench,release
 CENTRAL := https://repo1.maven.org/maven2/com/pain001/pain001-sdk
+DOCS_PY ?= python3
 FUZZ_TARGETS ?= ResponseDecodingFuzzTest ClientResponseFuzzTest
 FUZZ_TIME ?= 60s
 
 .PHONY: help check format-check size verify build test lint conformance classpath example-compile example examples bench-build bench bench-smoke demo fuzz lock sbom audit clean \
-  api-check javadoc release-dry-run
+  api-check javadoc manual release-dry-run
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /: /'
@@ -48,6 +49,10 @@ api-check: ## japicmp against the latest release on Maven Central (no-op before 
 
 javadoc: ## The Javadoc (doclint all, warnings fail) into target/reports/apidocs
 	$(MVN) -B -q -DskipTests compile javadoc:javadoc
+
+manual: javadoc ## The user manual (MkDocs strict) with the Javadoc under site/api/
+	$(DOCS_PY) -m mkdocs build --strict
+	mkdir -p site/api && cp -R target/reports/apidocs/. site/api/
 
 release-dry-run: ## The release build (jars, sources, Javadoc, SBOM, bundle), signed with GPG_KEYNAME if set, not published
 	$(MVN) -B -Prelease deploy cyclonedx:makeBom -DoutputFormat=json \

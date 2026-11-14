@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# The user manual: `make manual` builds it into site/ (strict), the Docs
+# workflow builds it on every pull request and deploys it to GitHub Pages
+# from main, with the Javadoc under /api/. Root documents (README,
+# DEVELOPMENT, ...) are included into stub pages with pymdownx.snippets,
+# not copied.
+site_name: pain001-sdk-java
+site_description: A typed Java client for the pain001 REST API.
+site_url: https://sebastienrousseau.github.io/pain001-sdk-java/
+copyright: '&copy; 2026 <a href="https://sebastienrousseau.com/" rel="author">Sebastien Rousseau</a>'
+repo_url: https://github.com/sebastienrousseau/pain001-sdk-java
+repo_name: sebastienrousseau/pain001-sdk-java
+edit_uri: edit/main/docs/
+docs_dir: docs
+site_dir: site
+strict: true
+
+# Pages included from the repository root keep their repository-relative
+# links (they render on GitHub too), which MkDocs cannot resolve from
+# docs/. Those links are checked where they are written, by lychee over
+# every Markdown file in the docs-lint job; nav and page errors still
+# fail this strict build.
+validation:
+  links:
+    not_found: info
+    unrecognized_links: info
+    anchors: info
+
+exclude_docs: |
+  requirements.in
+  requirements.txt
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Follow the system
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+nav:
+  - Home: index.md
+  - Using the SDK:
+      - Overview (README): readme.md
+      - API reference (Javadoc): https://sebastienrousseau.github.io/pain001-sdk-java/api/
+      - Benchmarks: BENCHMARKS.md
+      - Ecosystem comparison: COMPARISON.md
+      - Packaging: packaging.md
+      - Support: support.md
+  - How it works:
+      - Architecture: ARCHITECTURE.md
+      - Decisions:
+          - adr/README.md
+          - adr/0001-thin-client-over-the-server.md
+          - adr/0002-one-runtime-dependency.md
+          - adr/0003-error-model.md
+          - adr/0004-opt-in-retries.md
+      - Policies: POLICIES.md
+      - Roadmap: ROADMAP.md
+  - Project:
+      - Development: development.md
+      - Contributing: contributing.md
+      - Governance: governance.md
+      - Security: security.md
+      - Changelog: changelog.md
