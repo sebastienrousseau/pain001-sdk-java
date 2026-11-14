@@ -9,7 +9,7 @@ and this project adheres to the pain001 suite's `0.0.x` versioning: each
 release moves by `0.0.1`, in lockstep with the suite. The first release
 is 0.0.88, the first published to Maven Central.
 
-## [Unreleased]
+## [0.0.88] - 2026-11-14
 
 ### Highlights
 
@@ -27,6 +27,8 @@ is 0.0.88, the first published to Maven Central.
 
 ### Changed
 
+- CI tests against pain001 0.0.88, the release this SDK ships with
+  (`ci/server-requirements.in`).
 - The Maven release-signing public key is committed as
   `MAVEN-SIGNING-KEY.asc` and documented in `docs/packaging.md`;
   `KEYS.asc` stays the SSH allowed-signers list for commits and tags.

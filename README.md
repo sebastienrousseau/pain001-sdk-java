@@ -99,7 +99,7 @@ The one runtime dependency is Jackson databind (`com.fasterxml.jackson.core:jack
 - Maven 3.9.0 or newer to build from source (`./mvnw` brings 3.10.0).
 - A running pain001 server (`pain001 serve`, from `pip install 'pain001[api]'`)
   to call. This SDK is a client: the generation and validation happen in
-  the server. CI tests against pain001 0.0.87, the latest released core.
+  the server. CI tests against pain001 0.0.88, the latest released core.
 
 ---
 
