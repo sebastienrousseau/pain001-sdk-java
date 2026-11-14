@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -33,8 +34,9 @@ import java.util.regex.Pattern;
  * <p>Typed methods raise {@link Pain001ApiException} on a non-2xx response ({@link
  * GenerationRefusedException}, with the findings, when {@code generate} is refused) and {@link
  * UncheckedIOException} when the request cannot be sent or times out ({@link NoDocumentException}
- * when a 2xx from {@code generate} carries no XML). The client does not retry,
- * and never logs request or response bodies. Instances are immutable and thread-safe.
+ * when a 2xx from {@code generate} carries no XML). The client sends each request once unless a
+ * {@link RetryPolicy} is set, which retries {@code GET} calls only, and never logs request or
+ * response bodies. Instances are immutable and thread-safe.
  */
 public final class Pain001Client {
 
@@ -44,12 +46,14 @@ public final class Pain001Client {
   private final String baseUrl;
   private final String apiKey;
   private final Duration timeout;
+  private final RetryPolicy retryPolicy;
   private final HttpClient http;
 
   private Pain001Client(Builder builder) {
     this.baseUrl = builder.baseUrl;
     this.apiKey = builder.apiKey;
     this.timeout = builder.timeout;
+    this.retryPolicy = builder.retryPolicy;
     this.http =
         HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1)
@@ -184,20 +188,70 @@ public final class Pain001Client {
    * @param method the HTTP method, for example {@code GET}
    * @param path the path below the base URL, starting with {@code /}
    * @param body the JSON body, or null to send none
-   * @throws UncheckedIOException when the request cannot be sent or times out
+   * @throws UncheckedIOException when the request cannot be sent or times out (after the last
+   *     attempt, when a {@link RetryPolicy} applies)
    */
   public ApiResponse request(String method, String path, JsonNode body) {
     HttpRequest httpRequest = buildRequest(method, path, body);
+    int attempts = retries(httpRequest) ? retryPolicy.maxAttempts() : 1;
+    for (int attempt = 1; ; attempt++) {
+      Attempt result = send(httpRequest, method, path);
+      Optional<Duration> wait =
+          attempt < attempts && result.retryable()
+              ? retryPolicy.delay(attempt, result.retryAfter())
+              : Optional.empty();
+      if (wait.isEmpty()) {
+        return result.unwrap(failure(method, path));
+      }
+      pause(wait.get(), method, path);
+    }
+  }
+
+  private boolean retries(HttpRequest httpRequest) {
+    return retryPolicy != null && "GET".equals(httpRequest.method());
+  }
+
+  private Attempt send(HttpRequest httpRequest, String method, String path) {
     try {
-      HttpResponse<String> response =
-          http.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-      return new ApiResponse(response.statusCode(), Json.parseLenient(response.body()));
+      return new Attempt(
+          http.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)), null);
     } catch (IOException e) {
-      throw new UncheckedIOException(failure(method, path), e);
+      return new Attempt(null, e);
     } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      InterruptedIOException cause = new InterruptedIOException("interrupted");
-      throw new UncheckedIOException(failure(method, path), cause);
+      throw interrupted(method, path);
+    }
+  }
+
+  private void pause(Duration wait, String method, String path) {
+    try {
+      retryPolicy.sleep(wait);
+    } catch (InterruptedException e) {
+      throw interrupted(method, path);
+    }
+  }
+
+  private static UncheckedIOException interrupted(String method, String path) {
+    Thread.currentThread().interrupt();
+    InterruptedIOException cause = new InterruptedIOException("interrupted");
+    return new UncheckedIOException(failure(method, path), cause);
+  }
+
+  /** One send: the response, or the I/O failure that prevented one. */
+  private record Attempt(HttpResponse<String> response, IOException error) {
+
+    boolean retryable() {
+      return error != null || RetryPolicy.retriesStatus(response.statusCode());
+    }
+
+    Optional<String> retryAfter() {
+      return error == null ? response.headers().firstValue("Retry-After") : Optional.empty();
+    }
+
+    ApiResponse unwrap(String failure) {
+      if (error != null) {
+        throw new UncheckedIOException(failure, error);
+      }
+      return new ApiResponse(response.statusCode(), Json.parseLenient(response.body()));
     }
   }
 
@@ -274,6 +328,7 @@ public final class Pain001Client {
     private String baseUrl;
     private String apiKey;
     private Duration timeout = Duration.ofSeconds(30);
+    private RetryPolicy retryPolicy;
 
     private Builder() {}
 
@@ -295,6 +350,15 @@ public final class Pain001Client {
     /** The connect and per-request timeout; 30 seconds when not set. */
     public Builder timeout(Duration timeout) {
       this.timeout = timeout;
+      return this;
+    }
+
+    /**
+     * Retries {@code GET} calls under {@code retryPolicy}; null (the default) sends every request
+     * once. {@code POST} calls are never retried.
+     */
+    public Builder retryPolicy(RetryPolicy retryPolicy) {
+      this.retryPolicy = retryPolicy;
       return this;
     }
 

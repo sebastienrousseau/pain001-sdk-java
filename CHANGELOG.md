@@ -20,6 +20,15 @@ will be 0.0.86.
 
 ### Added
 
+- `RetryPolicy`, an opt-in retry policy set with
+  `Pain001Client.Builder.retryPolicy`. It retries `GET` calls only
+  (`health`, `faces`, and `request` with `GET`) after a connection
+  failure, a timeout, or HTTP 429 or 503, up to `maxAttempts` (default
+  3), with exponential backoff and jitter (200 ms initial, 5 s maximum
+  by default). A `Retry-After` header is honoured exactly, and when it
+  asks for longer than `maxBackoff` the answer is returned rather than
+  retried early. `POST` is never retried. Without a policy the client
+  sends every request once, as before.
 - A README demo, `.github/demo.gif`, rendered by `make demo` from
   `.github/demo.tape`: the example program against `pain001 serve` on
   loopback. `make demo` takes the server from `PAIN001_SERVER` or

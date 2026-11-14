@@ -159,7 +159,7 @@ the clients agree on what the server does.
 | Raw calls | `request(method, path, body)`: any endpoint, any status | Supported |
 | Errors | `Pain001ApiException` with `status()` and the parsed `detail()`; `GenerationRefusedException` with the refused generation's findings | Supported |
 | Async jobs | `/api/v1/generate/async`, `/api/v1/status/{id}`, `/api/v1/download/{id}` | Reachable through `request` only |
-| Retries | Automatic retry of failed requests | Not provided, by design |
+| Retries | `RetryPolicy`: opt-in retries of `GET` calls on connection failures, 429 and 503, honouring `Retry-After` | Supported, off by default |
 
 ---
 
@@ -216,8 +216,12 @@ There is no `docs/BENCHMARKS.md` yet, because there are no results.
   (a server older than 0.0.87 answers a refusal with 200) raises its
   subclass `NoDocumentException`, so a returned `GenerateResponse`
   always carries the document.
-- **No retries and no logging.** The client never logs request or
-  response bodies; they hold payment data.
+- **Retries are opt-in and `GET` only.** `RetryPolicy` retries `GET`
+  calls on connection failures, timeouts, 429 and 503, with exponential
+  backoff and jitter, and honours `Retry-After`. Without one, each
+  request is sent once.
+- **No logging.** The client never logs request or response bodies;
+  they hold payment data.
 
 ---
 
@@ -228,6 +232,7 @@ There is no `docs/BENCHMARKS.md` yet, because there are no results.
 | `baseUrl(String)` | required | The server, for example `http://127.0.0.1:8000`; http or https, no query or fragment; a trailing slash is ignored |
 | `apiKey(String)` | none | Sent as `Authorization: Bearer <key>` |
 | `timeout(Duration)` | 30 seconds | Connect timeout and per-request timeout |
+| `retryPolicy(RetryPolicy)` | none | Retries `GET` calls (`health`, `faces`, `request` with `GET`) on connection failures, timeouts, 429 and 503; never `POST` |
 
 ---
 
@@ -247,8 +252,9 @@ There is no `docs/BENCHMARKS.md` yet, because there are no results.
   works offline.
 - **You need the async job endpoints as typed methods.** They are
   reachable only through `request`.
-- **You need automatic retries.** The client sends each request once;
-  wrap it in your own retry policy if your calls are idempotent.
+- **You need `POST` calls retried.** `RetryPolicy` retries `GET` calls
+  only; `validate`, `generate`, `check` and `projectFace` are sent once.
+  Wrap them yourself if a duplicate request is harmless to you.
 - **You are on Java 11 or older.** The floor is Java 17.
 
 ---
