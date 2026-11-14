@@ -22,7 +22,10 @@
 ## Dependencies
 
 - One runtime dependency: Jackson databind, pinned to an exact version.
-  JUnit Jupiter is test-only. Dependabot proposes updates weekly.
+  JUnit Jupiter and Jazzer are test-only, JMH is in the `bench` profile
+  only, and JaCoCo, PMD, japicmp and the release plugins are build
+  plugins; none reaches the published artifact's runtime scope.
+  Dependabot proposes updates weekly.
 - Maven verifies every resolved artifact (dependencies and plugins)
   against the SHA-256 recorded in `.mvn/checksums/`, and fails on one
   that is missing or different. `make lock` re-records the file; a

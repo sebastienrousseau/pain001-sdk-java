@@ -11,7 +11,11 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public record ApiResponse(int status, JsonNode body) {
 
-  /** Whether the status is 2xx. */
+  /**
+   * Whether the status is 2xx.
+   *
+   * @return true for 200 to 299
+   */
   public boolean isSuccess() {
     return status >= 200 && status < 300;
   }

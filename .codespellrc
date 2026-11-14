@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# Spelling check for the docs-lint job (`make docs-lint`). Vendored and
+# generated files are skipped; AfterAll is JUnit's annotation.
+[codespell]
+skip = ./target,./site,./.git,./.mvn,./conformance,./LICENSES,*.gif,./docs/requirements.txt,./ci/server-requirements.txt,./src/bench/resources
+ignore-words-list = afterall

@@ -11,3 +11,6 @@ target/
 
 # Jazzer generated corpus (fuzzing mode)
 .cifuzz-corpus/
+
+# The rendered manual (make manual)
+site/

@@ -30,7 +30,11 @@ public final class GenerationRefusedException extends Pain001ApiException {
     this.response = response;
   }
 
-  /** The decoded refusal: {@code success} false, no XML, and the findings. */
+  /**
+   * The decoded refusal.
+   *
+   * @return the body: {@code success} false, no XML, and the findings
+   */
   public GenerateResponse response() {
     return response;
   }

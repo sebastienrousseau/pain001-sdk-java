@@ -1,0 +1,204 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# Release: on a signed annotated tag v0.0.N, or by hand as a dry run.
+#
+#   build    verifies the tag and every version, runs the full gate, builds
+#            the jar, sources and Javadoc jars, the POM and a CycloneDX
+#            SBOM (reproducibly: project.build.outputTimestamp), writes
+#            SHA256SUMS and the release notes, and attests provenance.
+#   publish  (environment `release`) rebuilds the same bytes, checks them
+#            against SHA256SUMS, signs them with GPG and publishes them
+#            to Maven Central through the Central Portal plugin.
+#   github   creates or updates the GitHub release "pain001-sdk-java N"
+#            with the assets and notes.
+#
+# workflow_dispatch defaults to dry_run: build runs in full and uploads
+# the assets and notes as a workflow artifact; publish and github are
+# skipped. Re-running is safe: a version already on Central is skipped
+# (ignorePublishedComponents) and an existing GitHub release is updated,
+# not duplicated. Secrets and settings: DEVELOPMENT.md.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and write the notes only; publish nothing
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+      id-token: write
+      attestations: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      dry_run: ${{ steps.meta.outputs.dry_run }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Version, tag and dry-run mode
+        id: meta
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          DRY_INPUT: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          version=$(awk '/<artifactId>pain001-sdk<\/artifactId>/ {f = 1; next}
+            f && /<version>/ {gsub(/.*<version>|<\/version>.*/, ""); print; exit}' pom.xml)
+          dry=true
+          if [ "$EVENT" = push ]; then
+            dry=false
+            [ "$REF_NAME" = "v$version" ] || { echo "tag $REF_NAME is not v$version (pom.xml)"; exit 1; }
+            [ "$(git cat-file -t "refs/tags/$REF_NAME")" = tag ] || { echo "$REF_NAME is not an annotated tag"; exit 1; }
+            subject=$(git tag -l --format='%(contents:subject)' "$REF_NAME")
+            [ "$subject" = "pain001-sdk-java v$version" ] || { echo "tag message is '$subject'"; exit 1; }
+            git cat-file tag "refs/tags/$REF_NAME" | grep -Eq -- '-----BEGIN (SSH|PGP) SIGNATURE-----' \
+              || { echo "$REF_NAME is not signed"; exit 1; }
+          elif [ "$DRY_INPUT" = false ]; then
+            echo "a real release starts from a pushed tag, not workflow_dispatch"; exit 1
+          fi
+          scripts/verify-release-versions "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "dry_run=$dry" >> "$GITHUB_OUTPUT"
+
+      - name: Full gate
+        run: make check
+
+      - name: Release build (jars, sources, Javadoc, SBOM; not signed, not published)
+        run: make release-dry-run
+
+      - name: Assets and SHA256SUMS
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          base="pain001-sdk-$VERSION"
+          cp "target/$base.jar" "target/$base-sources.jar" "target/$base-javadoc.jar" dist/
+          cp pom.xml "dist/$base.pom"
+          cp target/bom.json "dist/$base.cdx.json"
+          (cd dist && sha256sum -- * > SHA256SUMS)
+          cat dist/SHA256SUMS
+
+      - name: Release notes
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/release-notes.sh "$VERSION" dist/SHA256SUMS > release-notes.md
+
+      - name: Build provenance
+        if: steps.meta.outputs.dry_run == 'false'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*.jar
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-${{ steps.meta.outputs.version }}
+          path: |
+            dist/
+            release-notes.md
+          retention-days: 30
+
+  publish:
+    name: Publish to Maven Central
+    needs: build
+    if: needs.build.outputs.dry_run == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Writes settings.xml with the `central` server from the env vars
+      # below and imports the signing key.
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-${{ needs.build.outputs.version }}
+
+      - name: Sign and publish (skipped when the version is already on Central)
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: ./mvnw -B -Prelease -DskipTests deploy
+
+      - name: The published jars are the ones in SHA256SUMS
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          base="pain001-sdk-$VERSION"
+          for f in "$base.jar" "$base-sources.jar"; do
+            want=$(awk -v f="$f" '$2 == f {print $1}' dist/SHA256SUMS)
+            got=$(sha256sum "target/$f" | cut -c1-64)
+            [ "$want" = "$got" ] || { echo "$f rebuilt differently: $got, expected $want"; exit 1; }
+          done
+
+  github:
+    name: GitHub release
+    needs: [build, publish]
+    if: needs.build.outputs.dry_run == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-${{ needs.build.outputs.version }}
+
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          title="pain001-sdk-java $VERSION"
+          if gh release view "v$VERSION" -R "$REPO" > /dev/null 2>&1; then
+            gh release upload "v$VERSION" -R "$REPO" --clobber dist/*
+            gh release edit "v$VERSION" -R "$REPO" --title "$title" --notes-file release-notes.md
+          else
+            gh release create "v$VERSION" -R "$REPO" --verify-tag --title "$title" \
+              --notes-file release-notes.md dist/*
+          fi
+          gh release view "v$VERSION" -R "$REPO" --json name --jq .name | grep -qx "$title"

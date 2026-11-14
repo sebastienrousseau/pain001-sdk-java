@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 #
-# Lint, build and unit tests on Java 17 and 21, then the conformance kit
-# and the typed tests against a real `pain001 serve`, installed from the
-# hash-pinned ci/server-requirements.txt. Maven comes from ./mvnw (3.10.0,
-# SHA-256 checked) and every artifact it resolves must match
-# .mvn/checksums/.
+# Lint, build, unit tests and the 100 % coverage gate on Java 17 and 21;
+# the benchmark smoke run; the API breakage check; then the regression
+# run (scripts/regression.sh, the same as `make regression`): every gate,
+# the conformance kit, every example and the benchmark smoke run against
+# a real `pain001 serve` installed from the hash-pinned
+# ci/server-requirements.txt. Maven comes from ./mvnw (3.10.0, SHA-256
+# checked) and every artifact it resolves must match .mvn/checksums/.
 name: CI
 
 on:
@@ -15,6 +17,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
@@ -31,6 +37,9 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      - name: Every file states the same version
+        run: scripts/verify-release-versions
+
       - name: Whitespace format and file size
         run: make format-check size
 
@@ -38,7 +47,7 @@ jobs:
         run: make lint
 
   test:
-    name: Build and unit tests (Java ${{ matrix.java }})
+    name: Build, unit tests and coverage (Java ${{ matrix.java }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -55,15 +64,59 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
 
-      - name: Every local gate (live tests skip here)
+      - name: Every local gate (live tests skip here; JaCoCo fails below 100 %)
         run: make check
 
-  conformance:
-    name: Conformance kit against pain001 serve
+      - name: Coverage report
+        if: always() && matrix.java == '21'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  bench:
+    name: Benchmarks smoke run (client-side)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      PAIN001_BASE_URL: http://127.0.0.1:8000
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Every client-side benchmark once (not asserted)
+        run: make bench-smoke
+
+  api:
+    name: API breakage against the last release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # japicmp against the latest com.pain001:pain001-sdk on Maven
+      # Central. Until the first release is published there is nothing to
+      # compare with, and `make api-check` says so and passes.
+      - name: japicmp
+        run: make api-check
+
+  conformance:
+    name: Regression run against pain001 serve
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -84,37 +137,7 @@ jobs:
           python -m venv "$RUNNER_TEMP/srv"
           "$RUNNER_TEMP/srv/bin/python" -m pip install --require-hashes -r ci/server-requirements.txt
 
-      - name: Start pain001 serve and wait for health
-        run: |
-          set -euo pipefail
-          cd "$RUNNER_TEMP"
-          nohup "$RUNNER_TEMP/srv/bin/pain001" serve --host 127.0.0.1 --port 8000 > server.log 2>&1 &
-          for _ in $(seq 1 60); do
-            if curl -fsS "$PAIN001_BASE_URL/api/v1/health"; then echo; exit 0; fi
-            sleep 1
-          done
-          cat server.log
-          exit 1
-
-      - name: Conformance kit and typed tests
-        run: make conformance
-
-      - name: Every conformance case ran (none skipped)
-        run: |
-          set -euo pipefail
-          report=target/surefire-reports/TEST-com.pain001.sdk.ConformanceTest.xml
-          cases=$(python -c 'import json; print(len(json.load(open("conformance/cases.json"))["cases"]))')
-          grep -Eq "tests=\"$cases\"" "$report"
-          grep -Eq 'skipped="0"' "$report"
-          grep -Eq 'skipped="0"' target/surefire-reports/TEST-com.pain001.sdk.TypedApiTest.xml
-          echo "$cases conformance cases ran and passed"
-
-      - name: Example generates a file
-        run: |
-          set -euo pipefail
-          make example
-          grep -q '<NbOfTxs>5</NbOfTxs>' target/credit-transfer.xml
-
-      - name: Server log on failure
-        if: failure()
-        run: cat "$RUNNER_TEMP/server.log"
+      - name: Gate, conformance kit (none skipped), examples, benchmark smoke
+        env:
+          PAIN001_SERVER: ${{ runner.temp }}/srv/bin/pain001
+        run: make regression

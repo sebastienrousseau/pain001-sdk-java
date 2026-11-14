@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 #
-# Markdown style on every push and pull request (markdownlint-cli2,
-# configured in .markdownlint-cli2.jsonc). Run it locally with
-# `npx markdownlint-cli2@0.23.3 "**/*.md"`.
+# Cheap checks on the prose and the licensing: markdownlint, codespell,
+# REUSE (an SPDX licence and copyright for every file, REUSE.toml) and
+# lychee over every Markdown link, offline (repository-relative links
+# and anchors; no network, so no flakes).
 name: Docs lint
 
 on:
@@ -13,6 +14,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   markdownlint:
@@ -30,3 +35,45 @@ jobs:
 
       - name: Markdown style (markdownlint-cli2)
         run: npx --yes markdownlint-cli2@0.23.3 "**/*.md"
+
+  codespell:
+    name: codespell
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Spelling (settings in .codespellrc)
+        uses: codespell-project/actions-codespell@e3258cca84ce02b0bb36a3d41f2c18f719a0cc1a # v2.4.3
+
+  reuse:
+    name: REUSE
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: SPDX licence and copyright on every file
+        uses: fsfe/reuse-action@676e2d560c9a403aa252096d99fcab3e1132b0f5 # v6.0.0
+
+  links:
+    name: Links (lychee, offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Every repository-relative link and anchor in the Markdown
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --offline --no-progress --include-fragments
+            --exclude-path target --exclude-path site --exclude-path conformance
+            '**/*.md'
+          fail: true

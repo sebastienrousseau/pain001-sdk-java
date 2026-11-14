@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# Machine-readable licensing, per the REUSE specification; `reuse lint`
+# runs in the docs-lint job. Source files carry an SPDX-License-Identifier
+# header; this file adds the copyright line to every file, and the
+# licence to the files that cannot hold a comment (JSON, CSV and XML
+# fixtures, fuzz seeds, the demo GIF, checksum lists, generated lock
+# files). conformance/ is vendored from pain001 core under the same
+# licence and copyright.
+version = 1
+SPDX-PackageName = "pain001-sdk-java"
+SPDX-PackageSupplier = "Sebastien Rousseau <sebastian.rousseau@gmail.com>"
+SPDX-PackageDownloadLocation = "https://github.com/sebastienrousseau/pain001-sdk-java"
+
+[[annotations]]
+path = "**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Sebastien Rousseau"
+SPDX-License-Identifier = "Apache-2.0 OR MIT"

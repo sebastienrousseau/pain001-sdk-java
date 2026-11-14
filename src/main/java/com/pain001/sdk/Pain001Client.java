@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -32,23 +33,31 @@ import java.util.regex.Pattern;
  *
  * <p>Typed methods raise {@link Pain001ApiException} on a non-2xx response ({@link
  * GenerationRefusedException}, with the findings, when {@code generate} is refused) and {@link
- * UncheckedIOException} when the request cannot be sent or times out. The client does not retry,
- * and never logs request or response bodies. Instances are immutable and thread-safe.
+ * UncheckedIOException} when the request cannot be sent or times out ({@link NoDocumentException}
+ * when a 2xx from {@code generate} carries no XML). The client sends each request once unless a
+ * {@link RetryPolicy} is set, which retries {@code GET} calls only, and never logs request or
+ * response bodies. Instances are immutable and thread-safe.
  */
 public final class Pain001Client {
 
+  /** This SDK's version, sent as {@code User-Agent: pain001-sdk-java/<version>}. */
+  public static final String VERSION = "0.0.88";
+
+  private static final String USER_AGENT = "pain001-sdk-java/" + VERSION;
   private static final Pattern FACE_NAME = Pattern.compile("[A-Za-z0-9_-]+");
   private static final String JSON = "application/json";
 
   private final String baseUrl;
   private final String apiKey;
   private final Duration timeout;
+  private final RetryPolicy retryPolicy;
   private final HttpClient http;
 
   private Pain001Client(Builder builder) {
     this.baseUrl = builder.baseUrl;
     this.apiKey = builder.apiKey;
     this.timeout = builder.timeout;
+    this.retryPolicy = builder.retryPolicy;
     this.http =
         HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1)
@@ -57,17 +66,32 @@ public final class Pain001Client {
             .build();
   }
 
-  /** Starts a builder; {@link Builder#baseUrl} is required. */
+  /**
+   * Starts a builder; {@link Builder#baseUrl} is required.
+   *
+   * @return a new builder with the defaults
+   */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** {@code GET /api/v1/health}. */
+  /**
+   * {@code GET /api/v1/health}: whether the server is up, and its version.
+   *
+   * @return the server's status, version and message
+   */
   public HealthResponse health() {
     return HealthResponse.from(call("GET", "/api/v1/health", null));
   }
 
-  /** {@code POST /api/v1/ui/validate} with no scheme. */
+  /**
+   * {@code POST /api/v1/ui/validate} with no scheme.
+   *
+   * @param content the file's text (CSV, JSON or JSONL)
+   * @param filename a name whose suffix picks the parser, for example {@code payments.csv}
+   * @param messageType the ISO 20022 message type, for example {@code pain.001.001.09}
+   * @return the validation result
+   */
   public ValidationResponse validate(String content, String filename, String messageType) {
     return validate(content, filename, messageType, null);
   }
@@ -79,6 +103,7 @@ public final class Pain001Client {
    * @param filename a name whose suffix picks the parser, for example {@code payments.csv}
    * @param messageType the ISO 20022 message type, for example {@code pain.001.001.09}
    * @param scheme comma-separated scheme rulebooks to enforce, or null
+   * @return the validation result: row errors and scheme violations when not valid
    */
   public ValidationResponse validate(
       String content, String filename, String messageType, String scheme) {
@@ -86,7 +111,16 @@ public final class Pain001Client {
     return ValidationResponse.from(call("POST", "/api/v1/ui/validate", request));
   }
 
-  /** {@code POST /api/v1/ui/generate} with no scheme. */
+  /**
+   * {@code POST /api/v1/ui/generate} with no scheme.
+   *
+   * @param content the file's text (CSV, JSON or JSONL)
+   * @param filename a name whose suffix picks the parser, for example {@code payments.csv}
+   * @param messageType the ISO 20022 message type, for example {@code pain.001.001.09}
+   * @return the generated file; {@link GenerateResponse#xml()} holds the XML
+   * @throws GenerationRefusedException when the server refuses the data
+   * @throws NoDocumentException when a 2xx answer carries no XML
+   */
   public GenerateResponse generate(String content, String filename, String messageType) {
     return generate(content, filename, messageType, null);
   }
@@ -101,6 +135,8 @@ public final class Pain001Client {
    * @return the generated file; {@link GenerateResponse#success()} is true
    * @throws GenerationRefusedException when the server refuses the data (HTTP 422 with {@code
    *     success: false}); its {@link GenerationRefusedException#response()} holds the findings
+   * @throws NoDocumentException when a 2xx answer carries no XML (a server older than 0.0.87
+   *     answers a refusal with 200 and {@code success: false})
    */
   public GenerateResponse generate(
       String content, String filename, String messageType, String scheme) {
@@ -110,10 +146,19 @@ public final class Pain001Client {
     if (isRefusal(response)) {
       throw new GenerationRefusedException(GenerateResponse.from(response.body()), "POST", path);
     }
-    return GenerateResponse.from(checked(response, "POST", path));
+    GenerateResponse generated = GenerateResponse.from(checked(response, "POST", path));
+    if (!generated.success() || generated.xml() == null || generated.xml().isEmpty()) {
+      throw new NoDocumentException(response.status(), "POST", path);
+    }
+    return generated;
   }
 
-  /** {@code POST /api/v1/check} with the default rungs. */
+  /**
+   * {@code POST /api/v1/check} with the default rungs.
+   *
+   * @param xml the document as XML text
+   * @return the rungs run and their findings
+   */
   public CheckResponse check(String xml) {
     return check(xml, null, null);
   }
@@ -124,22 +169,30 @@ public final class Pain001Client {
    * @param xml the document as XML text
    * @param scheme comma-separated scheme profiles to add, or null
    * @param schematron a Schematron preset ({@code sepa}, {@code fednow}, {@code cbpr}), or null
+   * @return the rungs run and their findings
    */
   public CheckResponse check(String xml, String scheme, String schematron) {
-    ObjectNode request = Json.object();
-    request.put("xml", xml);
-    putIfPresent(request, "scheme", scheme);
-    putIfPresent(request, "schematron", schematron);
-    return CheckResponse.from(call("POST", "/api/v1/check", request));
+    return CheckResponse.from(call("POST", "/api/v1/check", checkPayload(xml, scheme, schematron)));
   }
 
-  /** {@code GET /api/v1/faces}: the faces the server can project to. */
+  /**
+   * {@code GET /api/v1/faces}: the faces the server can project to.
+   *
+   * @return each face's name, description and required bindings
+   */
   public List<FaceInfo> faces() {
     JsonNode body = call("GET", "/api/v1/faces", null);
     return Json.elements(body).stream().map(FaceInfo::from).toList();
   }
 
-  /** {@code POST /api/v1/faces/{face}} with the edition detected and no bindings. */
+  /**
+   * {@code POST /api/v1/faces/{face}} with the edition detected and no bindings.
+   *
+   * @param face a face name from {@link #faces()}, for example {@code berlin_group}
+   * @param xml the pain.001 document as XML text
+   * @return the projected payload and its loss report
+   * @throws IllegalArgumentException when {@code face} is not a plain name
+   */
   public FaceResponse projectFace(String face, String xml) {
     return projectFace(face, xml, null, null);
   }
@@ -152,20 +205,13 @@ public final class Pain001Client {
    * @param version the pain.001 edition, or null to detect it from the namespace
    * @param bindings side inputs the message does not carry (values may be maps, lists, strings or
    *     numbers), or null
+   * @return the projected payload and its loss report
    * @throws IllegalArgumentException when {@code face} is not a plain name
    */
   public FaceResponse projectFace(
       String face, String xml, String version, Map<String, ?> bindings) {
-    if (face == null || !FACE_NAME.matcher(face).matches()) {
-      throw new IllegalArgumentException("face must be a plain name such as berlin_group");
-    }
-    ObjectNode request = Json.object();
-    request.put("xml", xml);
-    putIfPresent(request, "version", version);
-    if (bindings != null) {
-      request.set("bindings", Json.toNode(bindings));
-    }
-    return FaceResponse.from(call("POST", "/api/v1/faces/" + face, request));
+    String path = facePath(face);
+    return FaceResponse.from(call("POST", path, facePayload(xml, version, bindings)));
   }
 
   /**
@@ -177,24 +223,76 @@ public final class Pain001Client {
    * @param method the HTTP method, for example {@code GET}
    * @param path the path below the base URL, starting with {@code /}
    * @param body the JSON body, or null to send none
-   * @throws UncheckedIOException when the request cannot be sent or times out
+   * @return the status and the leniently parsed body
+   * @throws UncheckedIOException when the request cannot be sent or times out (after the last
+   *     attempt, when a {@link RetryPolicy} applies)
    */
   public ApiResponse request(String method, String path, JsonNode body) {
     HttpRequest httpRequest = buildRequest(method, path, body);
-    try {
-      HttpResponse<String> response =
-          http.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-      return new ApiResponse(response.statusCode(), Json.parseLenient(response.body()));
-    } catch (IOException e) {
-      throw new UncheckedIOException(failure(method, path), e);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      InterruptedIOException cause = new InterruptedIOException("interrupted");
-      throw new UncheckedIOException(failure(method, path), cause);
+    int attempts = retries(httpRequest) ? retryPolicy.maxAttempts() : 1;
+    for (int attempt = 1; ; attempt++) {
+      Attempt result = send(httpRequest, method, path);
+      Optional<Duration> wait =
+          attempt < attempts && result.retryable()
+              ? retryPolicy.delay(attempt, result.retryAfter())
+              : Optional.empty();
+      if (wait.isEmpty()) {
+        return result.unwrap(failure(method, path));
+      }
+      pause(wait.get(), method, path);
     }
   }
 
-  private HttpRequest buildRequest(String method, String path, JsonNode body) {
+  private boolean retries(HttpRequest httpRequest) {
+    return retryPolicy != null && "GET".equals(httpRequest.method());
+  }
+
+  private Attempt send(HttpRequest httpRequest, String method, String path) {
+    try {
+      return new Attempt(
+          http.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)), null);
+    } catch (IOException e) {
+      return new Attempt(null, e);
+    } catch (InterruptedException e) {
+      throw interrupted(method, path);
+    }
+  }
+
+  private void pause(Duration wait, String method, String path) {
+    try {
+      retryPolicy.sleep(wait);
+    } catch (InterruptedException e) {
+      throw interrupted(method, path);
+    }
+  }
+
+  private static UncheckedIOException interrupted(String method, String path) {
+    Thread.currentThread().interrupt();
+    InterruptedIOException cause = new InterruptedIOException("interrupted");
+    return new UncheckedIOException(failure(method, path), cause);
+  }
+
+  /** One send: the response, or the I/O failure that prevented one. */
+  private record Attempt(HttpResponse<String> response, IOException error) {
+
+    boolean retryable() {
+      return error != null || RetryPolicy.retriesStatus(response.statusCode());
+    }
+
+    Optional<String> retryAfter() {
+      return error == null ? response.headers().firstValue("Retry-After") : Optional.empty();
+    }
+
+    ApiResponse unwrap(String failure) {
+      if (error != null) {
+        throw new UncheckedIOException(failure, error);
+      }
+      return new ApiResponse(response.statusCode(), Json.parseLenient(response.body()));
+    }
+  }
+
+  /** The request {@link #request} sends; package-private for the client-side benchmarks. */
+  HttpRequest buildRequest(String method, String path, JsonNode body) {
     Objects.requireNonNull(method, "method");
     if (path == null || !path.startsWith("/")) {
       throw new IllegalArgumentException("path must start with /");
@@ -207,6 +305,7 @@ public final class Pain001Client {
         HttpRequest.newBuilder(URI.create(baseUrl + path))
             .timeout(timeout)
             .header("Accept", JSON)
+            .header("User-Agent", USER_AGENT)
             .method(method.toUpperCase(Locale.ROOT), publisher);
     if (body != null) {
       builder.header("Content-Type", JSON);
@@ -241,7 +340,36 @@ public final class Pain001Client {
     return body;
   }
 
-  private static ObjectNode filePayload(
+  /** The {@code /api/v1/check} body. */
+  static ObjectNode checkPayload(String xml, String scheme, String schematron) {
+    ObjectNode payload = Json.object();
+    payload.put("xml", xml);
+    putIfPresent(payload, "scheme", scheme);
+    putIfPresent(payload, "schematron", schematron);
+    return payload;
+  }
+
+  /** The {@code /api/v1/faces/{face}} path, after checking the name is plain. */
+  static String facePath(String face) {
+    if (face == null || !FACE_NAME.matcher(face).matches()) {
+      throw new IllegalArgumentException("face must be a plain name such as berlin_group");
+    }
+    return "/api/v1/faces/" + face;
+  }
+
+  /** The {@code /api/v1/faces/{face}} body. */
+  static ObjectNode facePayload(String xml, String version, Map<String, ?> bindings) {
+    ObjectNode payload = Json.object();
+    payload.put("xml", xml);
+    putIfPresent(payload, "version", version);
+    if (bindings != null) {
+      payload.set("bindings", Json.toNode(bindings));
+    }
+    return payload;
+  }
+
+  /** The {@code /api/v1/ui/validate} and {@code /api/v1/ui/generate} body. */
+  static ObjectNode filePayload(
       String content, String filename, String messageType, String scheme) {
     ObjectNode payload = Json.object();
     payload.put("filename", filename);
@@ -267,32 +395,60 @@ public final class Pain001Client {
     private String baseUrl;
     private String apiKey;
     private Duration timeout = Duration.ofSeconds(30);
+    private RetryPolicy retryPolicy;
 
     private Builder() {}
 
     /**
      * The server's base URL, for example {@code http://127.0.0.1:8000}: http or https, with a
      * host, and no query or fragment. A trailing slash is ignored.
+     *
+     * @param baseUrl the server's base URL
+     * @return this builder
      */
     public Builder baseUrl(String baseUrl) {
       this.baseUrl = baseUrl;
       return this;
     }
 
-    /** An API key, sent as {@code Authorization: Bearer <key>}; null sends none. */
+    /**
+     * An API key, sent as {@code Authorization: Bearer <key>}; null sends none.
+     *
+     * @param apiKey the key, or null
+     * @return this builder
+     */
     public Builder apiKey(String apiKey) {
       this.apiKey = apiKey;
       return this;
     }
 
-    /** The connect and per-request timeout; 30 seconds when not set. */
+    /**
+     * The connect and per-request timeout; 30 seconds when not set.
+     *
+     * @param timeout a positive duration
+     * @return this builder
+     */
     public Builder timeout(Duration timeout) {
       this.timeout = timeout;
       return this;
     }
 
     /**
+     * Retries {@code GET} calls under {@code retryPolicy}; null (the default) sends every request
+     * once. {@code POST} calls are never retried.
+     *
+     * @param retryPolicy the policy, or null for none
+     * @return this builder
+     */
+    public Builder retryPolicy(RetryPolicy retryPolicy) {
+      this.retryPolicy = retryPolicy;
+      return this;
+    }
+
+    /**
      * Builds the client.
+     *
+     * @return the immutable, thread-safe client
      *
      * @throws IllegalArgumentException when the base URL is missing or malformed, or the timeout
      *     is not positive

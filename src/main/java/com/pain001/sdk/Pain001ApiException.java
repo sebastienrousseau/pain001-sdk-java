@@ -16,7 +16,9 @@ public class Pain001ApiException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
 
+  /** The HTTP status code. */
   private final int status;
+
   private final transient JsonNode detail;
 
   /**
@@ -33,12 +35,20 @@ public class Pain001ApiException extends RuntimeException {
     this.detail = detail;
   }
 
-  /** The HTTP status code. */
+  /**
+   * The HTTP status code.
+   *
+   * @return the non-2xx status
+   */
   public int status() {
     return status;
   }
 
-  /** The parsed {@code detail}: a string, an array (HTTP 422) or JSON null. */
+  /**
+   * The parsed {@code detail} of the error body.
+   *
+   * @return a string, an array (HTTP 422) or JSON null; never Java null
+   */
   public JsonNode detail() {
     return detail;
   }

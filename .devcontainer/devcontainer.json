@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+//
+// Java 21 (the build targets 17), Python 3.12 with uv for the pain001
+// server and the manual, and the docs-lint tools. On creation it runs
+// `make check`; `make regression` then runs everything CI runs.
+{
+  "name": "pain001-sdk-java",
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bookworm@sha256:0af991049cded4b8d5a90d2614289ceec390779ad6a3e4b70957e2b4f3bb1230",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.12" }
+  },
+  "postCreateCommand": "pip install --user uv==0.13.6 reuse==6.2.0 codespell==2.4.3 && make check",
+  "customizations": {
+    "vscode": {
+      "extensions": ["vscjava.vscode-java-pack", "EditorConfig.EditorConfig"]
+    }
+  }
+}

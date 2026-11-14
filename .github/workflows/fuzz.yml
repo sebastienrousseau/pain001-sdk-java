@@ -4,7 +4,7 @@
 # seconds in fuzzing mode (JAZZER_FUZZ=1), starting from its committed
 # seeds. The same targets run their seeds as regression tests in
 # `make check`. A finding fails the job and its crashing input is
-# uploaded; commit it under src/test/resources as a regression seed with
+# uploaded; commit it under src/fuzz/resources as a regression seed with
 # the fix.
 name: Fuzz
 
@@ -15,6 +15,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   fuzz:
@@ -46,6 +50,7 @@ jobs:
         with:
           name: fuzz-findings-${{ matrix.target }}
           path: |
-            src/test/resources/com/pain001/sdk/**/crash-*
+            src/fuzz/resources/com/pain001/sdk/**/crash-*
+            src/test/resources/**/crash-*
             crash-*
           if-no-files-found: ignore
