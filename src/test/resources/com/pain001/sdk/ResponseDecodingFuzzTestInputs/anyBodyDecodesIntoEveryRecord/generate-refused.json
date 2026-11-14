@@ -1,0 +1,1 @@
+{"success": false, "message": "Validation failed", "filename": null, "xml": null, "validation_errors": [{"field": "$.currency", "message": "bad currency", "value": "EURO"}], "scheme_violations": [{"rule": "UK-CHAPS-PURP", "severity": "error"}]}

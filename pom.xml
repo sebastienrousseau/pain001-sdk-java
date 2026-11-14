@@ -43,6 +43,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <jackson.version>2.23.0</jackson.version>
     <junit.version>6.1.3</junit.version>
+    <jazzer.version>0.30.0</jazzer.version>
   </properties>
 
   <dependencyManagement>
@@ -66,6 +67,15 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Fuzz tests (@FuzzTest): seeds run as regression tests in every
+         build; JAZZER_FUZZ=1 fuzzes. Its JUnit 5 dependencies resolve to
+         the junit-bom version above. -->
+    <dependency>
+      <groupId>com.code-intelligence</groupId>
+      <artifactId>jazzer-junit</artifactId>
+      <version>${jazzer.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

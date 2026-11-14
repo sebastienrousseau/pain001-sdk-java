@@ -8,3 +8,6 @@ target/
 .project
 .settings/
 .DS_Store
+
+# Jazzer generated corpus (fuzzing mode)
+.cifuzz-corpus/
