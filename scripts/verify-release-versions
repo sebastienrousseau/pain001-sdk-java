@@ -1,0 +1,66 @@
+#!/usr/bin/env sh
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# Fails when any file that states the SDK's version disagrees with
+# pom.xml. Run by `make check` and CI.
+#
+#   scripts/verify-release-versions            # the version in pom.xml
+#   scripts/verify-release-versions 0.0.88     # also require this version
+#
+# Checked: pom.xml, Pain001Client.VERSION (the User-Agent),
+# CITATION.cff, the SECURITY.md and SUPPORT.md support tables, every
+# Maven <version> snippet for com.pain001:pain001-sdk in README.md and
+# docs/, and a CHANGELOG.md heading for it (or [Unreleased] while the
+# release is being prepared).
+set -eu
+
+cd "$(dirname "$0")/.."
+
+# The project's own <version>: the first one after its artifactId.
+pom=$(awk '/<artifactId>pain001-sdk<\/artifactId>/ {found = 1; next}
+  found && /<version>/ {gsub(/.*<version>|<\/version>.*/, ""); print; exit}' pom.xml)
+want=${1:-$pom}
+fail=0
+
+bad() {
+  echo "verify-release-versions: $1" >&2
+  fail=1
+}
+
+case $want in
+  0.0.[0-9]*) ;;
+  *) bad "version '$want' is not 0.0.N" ;;
+esac
+[ "$pom" = "$want" ] || bad "pom.xml says $pom, expected $want"
+
+constant=$(sed -n 's/.*String VERSION = "\([^"]*\)";.*/\1/p' \
+  src/main/java/com/pain001/sdk/Pain001Client.java)
+[ "$constant" = "$want" ] || bad "Pain001Client.VERSION says '$constant', expected $want"
+
+cff=$(sed -n 's/^version: "\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' CITATION.cff)
+[ "$cff" = "$want" ] || bad "CITATION.cff says '$cff', expected $want"
+
+for f in SECURITY.md SUPPORT.md; do
+  grep -Eq "^\| \`?$want\`? " "$f" || bad "$f has no support-table row for $want"
+done
+
+# Every dependency snippet for this artifact names this version.
+for f in README.md docs/*.md; do
+  [ -f "$f" ] || continue
+  awk -v want="$want" -v file="$f" '
+    /<artifactId>pain001-sdk<\/artifactId>/ {inside = 1; next}
+    inside && /<version>/ {
+      v = $0; gsub(/.*<version>|<\/version>.*/, "", v)
+      if (v != want) { printf "verify-release-versions: %s:%d says %s, expected %s\n", file, NR, v, want; bad = 1 }
+      inside = 0
+    }
+    END { exit bad }' "$f" >&2 || fail=1
+  grep -n "com\.pain001:pain001-sdk:[0-9]" "$f" | grep -v "pain001-sdk:$want" >&2 &&
+    bad "$f names another version in a Gradle coordinate"
+done
+
+grep -Eq "^## \[($want|Unreleased)\]" CHANGELOG.md ||
+  bad "CHANGELOG.md has no [$want] or [Unreleased] heading"
+
+[ "$fail" -eq 0 ] && echo "verify-release-versions: every file says $want"
+exit "$fail"

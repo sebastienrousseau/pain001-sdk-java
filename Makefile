@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 #
-# `make check` runs every local gate CI runs: whitespace format, file
-# size, the Maven build (javac -Xlint:all -Werror, unit tests, PMD
-# complexity ceilings) and the example's compile. The conformance kit and
-# the typed tests run inside `mvn verify` when PAIN001_BASE_URL is set,
-# and skip otherwise. The Jazzer fuzz tests run their committed seeds as
-# regression tests there too; `make fuzz` fuzzes them.
+# `make check` runs every local gate CI's build job runs: the version
+# check, whitespace format, file size, the Maven build (javac -Xlint:all
+# -Werror, unit tests, JaCoCo at 100 % line and branch, PMD complexity
+# ceilings) and the examples' compile. The conformance kit and the typed
+# tests run inside `mvn verify` when PAIN001_BASE_URL is set, and skip
+# otherwise. The Jazzer fuzz tests run their committed seeds as
+# regression tests there too; `make fuzz` fuzzes them. `make regression`
+# runs all of it against a fresh server, as CI's conformance job does.
+# DEVELOPMENT.md maps every CI job to its target.
 #
 # ./mvnw pins Maven 3.10.0 (SHA-256 checked) and .mvn/maven.config makes
 # Maven refuse any artifact whose SHA-256 is not recorded in
@@ -28,12 +31,18 @@ FUZZ_TARGETS ?= ResponseDecodingFuzzTest ClientResponseFuzzTest
 FUZZ_TIME ?= 60s
 
 .PHONY: help check format-check size verify build test lint conformance classpath example-compile example examples bench-build bench bench-smoke demo fuzz lock sbom audit clean \
-  api-check javadoc manual release-dry-run
+  versions regression api-check javadoc manual docs-lint release-dry-run
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /: /'
 
-check: format-check size verify example-compile ## Every local gate
+check: versions format-check size verify example-compile ## Every local gate
+
+versions: ## Every file states the version in pom.xml
+	@scripts/verify-release-versions
+
+regression: ## Gate, conformance kit, examples and benchmark smoke against a fresh server
+	scripts/regression.sh
 
 api-check: ## japicmp against the latest release on Maven Central (no-op before the first)
 	@latest=$$(curl -fsS "$(CENTRAL)/maven-metadata.xml" 2>/dev/null | sed -n 's:.*<release>\(.*\)</release>.*:\1:p'); \
@@ -53,6 +62,12 @@ javadoc: ## The Javadoc (doclint all, warnings fail) into target/reports/apidocs
 manual: javadoc ## The user manual (MkDocs strict) with the Javadoc under site/api/
 	$(DOCS_PY) -m mkdocs build --strict
 	mkdir -p site/api && cp -R target/reports/apidocs/. site/api/
+
+docs-lint: ## markdownlint, codespell, REUSE and lychee (offline) over the docs
+	npx --yes markdownlint-cli2@0.23.3 "**/*.md"
+	codespell
+	reuse lint
+	lychee --offline --no-progress --include-fragments --exclude-path target --exclude-path site --exclude-path conformance '**/*.md'
 
 release-dry-run: ## The release build (jars, sources, Javadoc, SBOM, bundle), signed with GPG_KEYNAME if set, not published
 	$(MVN) -B -Prelease deploy cyclonedx:makeBom -DoutputFormat=json \
