@@ -109,10 +109,10 @@ jobs:
           grep -Eq 'skipped="0"' target/surefire-reports/TEST-com.pain001.sdk.TypedApiTest.xml
           echo "$cases conformance cases ran and passed"
 
-      - name: Example generates a file
+      - name: Every example runs against the server
         run: |
           set -euo pipefail
-          make example
+          make examples
           grep -q '<NbOfTxs>5</NbOfTxs>' target/credit-transfer.xml
 
       - name: Server log on failure

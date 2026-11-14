@@ -20,6 +20,11 @@ will be 0.0.86.
 
 ### Added
 
+- One runnable example per part of the API in `examples/`: `Health`,
+  `Validate`, `Check`, `Faces`, `ProjectFace`, `RawRequest`,
+  `ErrorHandling`, `Timeouts` and `ApiKey`, beside
+  `GenerateCreditTransfer`. `make examples` runs them all against
+  `PAIN001_BASE_URL`, and the CI conformance job does so on every push.
 - `RetryPolicy`, an opt-in retry policy set with
   `Pain001Client.Builder.retryPolicy`. It retries `GET` calls only
   (`health`, `faces`, and `request` with `GET`) after a connection

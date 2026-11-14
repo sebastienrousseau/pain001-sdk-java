@@ -238,11 +238,23 @@ There is no `docs/BENCHMARKS.md` yet, because there are no results.
 
 ## Examples
 
-- [`examples/GenerateCreditTransfer.java`](examples/GenerateCreditTransfer.java):
-  checks the server's health, validates the conformance kit's synthetic
-  credit-transfer CSV and generates a pain.001.001.09 file from it. Run `make example` with a server listening at
-  `PAIN001_BASE_URL` (default `http://127.0.0.1:8000`); it writes
-  `target/credit-transfer.xml`. CI runs it against a live server.
+Each file in [`examples/`](examples/) is a runnable program for one
+part of the API. `make examples` compiles them against the built SDK and
+runs every one against the server at `PAIN001_BASE_URL`; CI does the
+same in its conformance job, so they cannot rot.
+
+| Example | Shows |
+| :--- | :--- |
+| [`Health.java`](examples/Health.java) | `health()`: server status and version |
+| [`Validate.java`](examples/Validate.java) | `validate(...)`: a valid file, a scheme violation (`uk-chaps`), and a 400 for a bad IBAN |
+| [`GenerateCreditTransfer.java`](examples/GenerateCreditTransfer.java) | `health`, `validate` then `generate(...)`: writes `target/credit-transfer.xml` (the README demo) |
+| [`Check.java`](examples/Check.java) | `check(...)`: XSD and MDR rungs on an existing document |
+| [`Faces.java`](examples/Faces.java) | `faces()`: the target standards and their bindings |
+| [`ProjectFace.java`](examples/ProjectFace.java) | `projectFace(...)`: Berlin Group projection and its loss report |
+| [`RawRequest.java`](examples/RawRequest.java) | `request(...)`: any endpoint, any status, no exception |
+| [`ErrorHandling.java`](examples/ErrorHandling.java) | `GenerationRefusedException`, `Pain001ApiException`, `NoDocumentException` and `UncheckedIOException`, in catch order |
+| [`Timeouts.java`](examples/Timeouts.java) | `timeout(...)` and `RetryPolicy` against an unreachable port, then the real server |
+| [`ApiKey.java`](examples/ApiKey.java) | `apiKey(...)`: the bearer token, read from `PAIN001_API_KEY` |
 
 ---
 

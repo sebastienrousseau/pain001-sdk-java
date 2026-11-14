@@ -20,10 +20,11 @@ LOCK_REPO ?= /tmp/pain001-sdk-java-lock-repo
 TC := -Daether.artifactResolver.postProcessor.trustedChecksums
 JAVA_FILES := $(shell find src examples -name '*.java' | LC_ALL=C sort)
 EXAMPLE_CP = target/classes:$$(cat target/classpath.txt)
+EXAMPLES := $(sort $(basename $(notdir $(wildcard examples/*.java))))
 FUZZ_TARGETS ?= ResponseDecodingFuzzTest ClientResponseFuzzTest
 FUZZ_TIME ?= 60s
 
-.PHONY: help check format-check size verify build test lint conformance classpath example-compile example demo fuzz lock sbom audit clean
+.PHONY: help check format-check size verify build test lint conformance classpath example-compile example examples demo fuzz lock sbom audit clean
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /: /'
@@ -70,6 +71,13 @@ example-compile: classpath ## Compile examples/ against the built SDK
 
 example: classpath ## Generate target/credit-transfer.xml through PAIN001_BASE_URL
 	java -cp "$(EXAMPLE_CP)" examples/GenerateCreditTransfer.java
+
+examples: example-compile ## Run every example against PAIN001_BASE_URL; fails on the first failure
+	@test -n "$$PAIN001_BASE_URL" || { echo "set PAIN001_BASE_URL to a running pain001 serve"; exit 1; }
+	@for e in $(EXAMPLES); do \
+	  echo "== $$e"; \
+	  java -cp "target/example-classes:$(EXAMPLE_CP)" "$$e" || { echo "example $$e failed"; exit 1; }; \
+	done
 
 fuzz: ## Fuzz each Jazzer target for FUZZ_TIME (60s); findings land in its seed directory
 	@for t in $(FUZZ_TARGETS); do \
