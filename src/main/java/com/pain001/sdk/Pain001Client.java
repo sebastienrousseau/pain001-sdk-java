@@ -32,7 +32,8 @@ import java.util.regex.Pattern;
  *
  * <p>Typed methods raise {@link Pain001ApiException} on a non-2xx response ({@link
  * GenerationRefusedException}, with the findings, when {@code generate} is refused) and {@link
- * UncheckedIOException} when the request cannot be sent or times out. The client does not retry,
+ * UncheckedIOException} when the request cannot be sent or times out ({@link NoDocumentException}
+ * when a 2xx from {@code generate} carries no XML). The client does not retry,
  * and never logs request or response bodies. Instances are immutable and thread-safe.
  */
 public final class Pain001Client {
@@ -101,6 +102,8 @@ public final class Pain001Client {
    * @return the generated file; {@link GenerateResponse#success()} is true
    * @throws GenerationRefusedException when the server refuses the data (HTTP 422 with {@code
    *     success: false}); its {@link GenerationRefusedException#response()} holds the findings
+   * @throws NoDocumentException when a 2xx answer carries no XML (a server older than 0.0.87
+   *     answers a refusal with 200 and {@code success: false})
    */
   public GenerateResponse generate(
       String content, String filename, String messageType, String scheme) {
@@ -110,7 +113,11 @@ public final class Pain001Client {
     if (isRefusal(response)) {
       throw new GenerationRefusedException(GenerateResponse.from(response.body()), "POST", path);
     }
-    return GenerateResponse.from(checked(response, "POST", path));
+    GenerateResponse generated = GenerateResponse.from(checked(response, "POST", path));
+    if (!generated.success() || generated.xml() == null || generated.xml().isEmpty()) {
+      throw new NoDocumentException(response.status(), "POST", path);
+    }
+    return generated;
   }
 
   /** {@code POST /api/v1/check} with the default rungs. */

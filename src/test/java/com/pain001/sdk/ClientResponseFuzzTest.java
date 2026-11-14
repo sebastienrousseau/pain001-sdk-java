@@ -32,8 +32,10 @@ import org.junit.jupiter.api.BeforeAll;
  *
  * <p>The client promises: a 2xx returns a value; anything else raises {@link Pain001ApiException}
  * carrying the status and the body's {@code detail}, or {@link GenerationRefusedException} for a
- * refused {@code generate}; the message names only status, method and path, never the body. Any
- * other exception escaping, or a broken promise, is a finding.
+ * refused {@code generate}; a 2xx from {@code generate} without the XML raises {@link
+ * NoDocumentException}, so a returned {@link GenerateResponse} always has it; the message names
+ * only status, method and path, never the body. Any other exception escaping, or a broken promise,
+ * is a finding.
  */
 class ClientResponseFuzzTest {
 
@@ -99,6 +101,9 @@ class ClientResponseFuzzTest {
       Object result = call.invoke().apply(client);
       assertTrue(code >= 200 && code < 300, "a value is returned only for 2xx, got " + code);
       assertTrue(result != null, "a typed call never returns null");
+      assertTrue(!(result instanceof GenerateResponse g) || hasDocument(g), "generate has the XML");
+    } catch (NoDocumentException e) {
+      assertNoDocument(call, code, sent, e);
     } catch (GenerationRefusedException e) {
       assertRefusal(call, code, sent, e);
     } catch (Pain001ApiException e) {
@@ -113,6 +118,19 @@ class ClientResponseFuzzTest {
     assertEquals(NullNode.getInstance(), e.detail());
     assertEquals(GenerateResponse.from(sent), e.response());
     assertMessage(call, code, e);
+  }
+
+  private static void assertNoDocument(Call call, int code, JsonNode sent, NoDocumentException e) {
+    assertEquals(GENERATE, call.path(), "only generate needs a document");
+    assertTrue(code >= 200 && code < 300, "no-document is a 2xx, got " + code);
+    assertTrue(!hasDocument(GenerateResponse.from(sent)), "raised only when the XML is missing");
+    assertEquals(code, e.status());
+    String expected = "pain001 API returned HTTP " + code + " for POST " + GENERATE;
+    assertEquals(expected + " without an XML document", e.getMessage());
+  }
+
+  private static boolean hasDocument(GenerateResponse response) {
+    return response.success() && response.xml() != null && !response.xml().isEmpty();
   }
 
   private static void assertApiError(Call call, int code, JsonNode sent, Pain001ApiException e) {

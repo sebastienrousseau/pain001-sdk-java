@@ -64,3 +64,13 @@ will be 0.0.86.
 - CI on Java 17 and 21 with PMD complexity ceilings, a conformance job
   against `pain001 serve` 0.0.86 from hash-pinned requirements, DCO and
   Markdown lint, and the suite's community files.
+
+### Fixed
+
+- `generate` returned a `GenerateResponse` without the XML when a 2xx
+  answer had `success` not true or no `xml`, which is what a server
+  older than pain001 0.0.87 sends for a refused file; its Javadoc
+  promised the XML. It now raises the new `NoDocumentException`, an
+  `UncheckedIOException` (a broken reply, not a refusal), as the Go SDK
+  returns `ErrNoDocument` and the C++ SDK throws `NoDocument`. A
+  `ClientResponseFuzzTest` seed pins it.

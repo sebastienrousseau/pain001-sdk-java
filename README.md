@@ -212,7 +212,10 @@ There is no `docs/BENCHMARKS.md` yet, because there are no results.
   `schemeViolations()`. The exception message names only the status,
   method and path.
 - **Transport failures** (connection refused, timeout) raise
-  `java.io.UncheckedIOException`.
+  `java.io.UncheckedIOException`. A 2xx from `generate` without the XML
+  (a server older than 0.0.87 answers a refusal with 200) raises its
+  subclass `NoDocumentException`, so a returned `GenerateResponse`
+  always carries the document.
 - **No retries and no logging.** The client never logs request or
   response bodies; they hold payment data.
 
