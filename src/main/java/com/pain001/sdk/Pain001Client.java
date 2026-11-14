@@ -40,6 +40,10 @@ import java.util.regex.Pattern;
  */
 public final class Pain001Client {
 
+  /** This SDK's version, sent as {@code User-Agent: pain001-sdk-java/<version>}. */
+  public static final String VERSION = "0.0.88";
+
+  private static final String USER_AGENT = "pain001-sdk-java/" + VERSION;
   private static final Pattern FACE_NAME = Pattern.compile("[A-Za-z0-9_-]+");
   private static final String JSON = "application/json";
 
@@ -301,6 +305,7 @@ public final class Pain001Client {
         HttpRequest.newBuilder(URI.create(baseUrl + path))
             .timeout(timeout)
             .header("Accept", JSON)
+            .header("User-Agent", USER_AGENT)
             .method(method.toUpperCase(Locale.ROOT), publisher);
     if (body != null) {
       builder.header("Content-Type", JSON);

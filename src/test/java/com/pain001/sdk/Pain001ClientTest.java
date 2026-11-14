@@ -39,6 +39,7 @@ class Pain001ClientTest {
       assertEquals("/api/v1/health", server.last().path());
       assertFalse(server.last().headers().containsKey("authorization"));
       assertEquals("application/json", server.last().headers().get("accept"));
+      assertEquals("pain001-sdk-java/0.0.88", server.last().headers().get("user-agent"));
     }
   }
 
