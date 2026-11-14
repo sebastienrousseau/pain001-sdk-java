@@ -32,8 +32,16 @@ build provenance attestation, then publishes to Maven Central.
 ```sh
 sha256sum -c SHA256SUMS                       # from the GitHub release
 gh attestation verify pain001-sdk-0.0.88.jar --repo sebastienrousseau/pain001-sdk-java
+gpg --import MAVEN-SIGNING-KEY.asc               # or fetch it from keyserver.ubuntu.com
 gpg --verify pain001-sdk-0.0.88.jar.asc pain001-sdk-0.0.88.jar
 ```
+
+The Maven artifacts are signed by the RSA-4096 release key
+`B3F5 CCDB 5A9C 2D04 EC95  2C03 5BA4 F8F9 F0F2 F59C`
+(Sebastien Rousseau, pain001-sdk release signing), committed as
+`MAVEN-SIGNING-KEY.asc` and published to `keyserver.ubuntu.com` and
+`keys.openpgp.org`. It expires on 2028-11-13 and will be extended or
+replaced, in a signed commit, before then.
 
 The release tag is SSH-signed; `KEYS.asc` lists the signing key and how
 to verify a tag with `git tag -v`.
