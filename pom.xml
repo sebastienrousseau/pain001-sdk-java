@@ -210,6 +210,42 @@
         </executions>
       </plugin>
       <plugin>
+        <!-- The Jazzer fuzz tests and their seeds live in src/fuzz/, not
+             src/test/: OpenSSF Scorecard's Fuzzing check skips every path
+             under src/test/, so it could not see them there. Maven runs
+             them as ordinary tests from these extra test roots. -->
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>fuzz-sources</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src/fuzz/java</source>
+              </sources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>fuzz-resources</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>add-test-resource</goal>
+            </goals>
+            <configuration>
+              <resources>
+                <resource>
+                  <directory>src/fuzz/resources</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
         <executions>

@@ -73,30 +73,36 @@ example's output changes.
 - `ConformanceTest`: every case in `conformance/cases.json` through
   `Pain001Client.request`, against a live server.
 - `TypedApiTest`: one test per typed method, against a live server.
-- `ResponseDecodingFuzzTest` and `ClientResponseFuzzTest`:
+- `ResponseDecodingFuzzTest` and `ClientResponseFuzzTest` (in `src/fuzz/java/`):
   [Jazzer](https://github.com/CodeIntelligenceTesting/jazzer) fuzz
   tests for what a server sends back. The first feeds arbitrary bytes
   to the lenient parse and every record decoder; the second answers
   every typed call from a loopback server with an arbitrary status and
   body, and checks that only `Pain001ApiException` (or
-  `GenerationRefusedException`) escapes, with the status, the body's
+  `GenerationRefusedException`, or `NoDocumentException` for a 2xx
+  `generate` without XML) escapes, with the status, the body's
   `detail`, and a message that never contains the body.
 
 ## Fuzzing
 
-`mvn verify` runs each fuzz test over its committed seeds under
-`src/test/resources/com/pain001/sdk/<Test>Inputs/`, as ordinary
-regression tests. To fuzz:
+The fuzz tests live in `src/fuzz/java/` and their committed seeds in
+`src/fuzz/resources/com/pain001/sdk/<Test>Inputs/`; the build adds both
+as test roots, so `mvn verify` runs every seed as an ordinary
+regression test. They are outside `src/test/` because OpenSSF
+Scorecard's Fuzzing check ignores everything under `src/test/`. To fuzz:
 
 ```sh
 make fuzz                                  # each target for 60 s
 make fuzz FUZZ_TARGETS=ClientResponseFuzzTest FUZZ_TIME=10m
 ```
 
-The generated corpus goes to `.cifuzz-corpus/` (ignored). A finding is
-written as `crash-<sha1>` into the target's seed directory: keep it
-there, committed with the fix, so it stays a regression test. CI fuzzes
-each target for 60 seconds on every pull request.
+The generated corpus goes to `.cifuzz-corpus/` (ignored). Jazzer
+always writes a finding as `crash-<sha1>` under
+`src/test/resources/com/pain001/sdk/<Test>Inputs/<method>/` (the path
+is fixed in Jazzer). Move it to the same path under
+`src/fuzz/resources/` and commit it with the fix, so it stays a
+regression test. CI fuzzes each target for 60 seconds on every pull
+request and uploads any finding.
 
 ## The conformance kit
 
