@@ -20,6 +20,7 @@ public final class NoDocumentException extends UncheckedIOException {
 
   private static final long serialVersionUID = 1L;
 
+  /** The 2xx HTTP status code the server answered. */
   private final int status;
 
   /**
@@ -43,7 +44,11 @@ public final class NoDocumentException extends UncheckedIOException {
         + " without an XML document";
   }
 
-  /** The 2xx HTTP status code the server answered. */
+  /**
+   * The 2xx HTTP status code the server answered.
+   *
+   * @return a status from 200 to 299
+   */
   public int status() {
     return status;
   }

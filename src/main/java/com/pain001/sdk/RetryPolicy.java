@@ -60,22 +60,38 @@ public final class RetryPolicy {
     this.clock = builder.clock;
   }
 
-  /** Starts a builder with the defaults: 3 attempts, 200 ms initial and 5 s maximum backoff. */
+  /**
+   * Starts a builder with the defaults: 3 attempts, 200 ms initial and 5 s maximum backoff.
+   *
+   * @return a new builder
+   */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** The number of attempts in all, including the first; at least 1. */
+  /**
+   * The number of attempts in all, including the first.
+   *
+   * @return at least 1
+   */
   public int maxAttempts() {
     return maxAttempts;
   }
 
-  /** The wait before the first retry, before jitter. */
+  /**
+   * The wait before the first retry, before jitter.
+   *
+   * @return a positive duration
+   */
   public Duration initialBackoff() {
     return initialBackoff;
   }
 
-  /** The longest wait before any retry, and the longest {@code Retry-After} honoured. */
+  /**
+   * The longest wait before any retry, and the longest {@code Retry-After} honoured.
+   *
+   * @return a duration no shorter than {@link #initialBackoff()}
+   */
   public Duration maxBackoff() {
     return maxBackoff;
   }
@@ -140,19 +156,34 @@ public final class RetryPolicy {
 
     private Builder() {}
 
-    /** The number of attempts in all, including the first (default 3); 1 disables retries. */
+    /**
+     * The number of attempts in all, including the first (default 3); 1 disables retries.
+     *
+     * @param maxAttempts at least 1
+     * @return this builder
+     */
     public Builder maxAttempts(int maxAttempts) {
       this.maxAttempts = maxAttempts;
       return this;
     }
 
-    /** The wait before the first retry, before jitter (default 200 ms). */
+    /**
+     * The wait before the first retry, before jitter (default 200 ms).
+     *
+     * @param initialBackoff a positive duration
+     * @return this builder
+     */
     public Builder initialBackoff(Duration initialBackoff) {
       this.initialBackoff = initialBackoff;
       return this;
     }
 
-    /** The longest wait before any retry (default 5 s), and the longest Retry-After honoured. */
+    /**
+     * The longest wait before any retry (default 5 s), and the longest Retry-After honoured.
+     *
+     * @param maxBackoff a positive duration, no shorter than the initial backoff
+     * @return this builder
+     */
     public Builder maxBackoff(Duration maxBackoff) {
       this.maxBackoff = maxBackoff;
       return this;
@@ -175,6 +206,8 @@ public final class RetryPolicy {
 
     /**
      * Builds the policy.
+     *
+     * @return the immutable policy
      *
      * @throws IllegalArgumentException when {@code maxAttempts} is below 1, a backoff is missing or
      *     not positive, or {@code maxBackoff} is shorter than {@code initialBackoff}

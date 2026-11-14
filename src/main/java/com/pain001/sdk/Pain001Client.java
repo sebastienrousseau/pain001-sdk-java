@@ -62,17 +62,32 @@ public final class Pain001Client {
             .build();
   }
 
-  /** Starts a builder; {@link Builder#baseUrl} is required. */
+  /**
+   * Starts a builder; {@link Builder#baseUrl} is required.
+   *
+   * @return a new builder with the defaults
+   */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** {@code GET /api/v1/health}. */
+  /**
+   * {@code GET /api/v1/health}: whether the server is up, and its version.
+   *
+   * @return the server's status, version and message
+   */
   public HealthResponse health() {
     return HealthResponse.from(call("GET", "/api/v1/health", null));
   }
 
-  /** {@code POST /api/v1/ui/validate} with no scheme. */
+  /**
+   * {@code POST /api/v1/ui/validate} with no scheme.
+   *
+   * @param content the file's text (CSV, JSON or JSONL)
+   * @param filename a name whose suffix picks the parser, for example {@code payments.csv}
+   * @param messageType the ISO 20022 message type, for example {@code pain.001.001.09}
+   * @return the validation result
+   */
   public ValidationResponse validate(String content, String filename, String messageType) {
     return validate(content, filename, messageType, null);
   }
@@ -84,6 +99,7 @@ public final class Pain001Client {
    * @param filename a name whose suffix picks the parser, for example {@code payments.csv}
    * @param messageType the ISO 20022 message type, for example {@code pain.001.001.09}
    * @param scheme comma-separated scheme rulebooks to enforce, or null
+   * @return the validation result: row errors and scheme violations when not valid
    */
   public ValidationResponse validate(
       String content, String filename, String messageType, String scheme) {
@@ -91,7 +107,16 @@ public final class Pain001Client {
     return ValidationResponse.from(call("POST", "/api/v1/ui/validate", request));
   }
 
-  /** {@code POST /api/v1/ui/generate} with no scheme. */
+  /**
+   * {@code POST /api/v1/ui/generate} with no scheme.
+   *
+   * @param content the file's text (CSV, JSON or JSONL)
+   * @param filename a name whose suffix picks the parser, for example {@code payments.csv}
+   * @param messageType the ISO 20022 message type, for example {@code pain.001.001.09}
+   * @return the generated file; {@link GenerateResponse#xml()} holds the XML
+   * @throws GenerationRefusedException when the server refuses the data
+   * @throws NoDocumentException when a 2xx answer carries no XML
+   */
   public GenerateResponse generate(String content, String filename, String messageType) {
     return generate(content, filename, messageType, null);
   }
@@ -124,7 +149,12 @@ public final class Pain001Client {
     return generated;
   }
 
-  /** {@code POST /api/v1/check} with the default rungs. */
+  /**
+   * {@code POST /api/v1/check} with the default rungs.
+   *
+   * @param xml the document as XML text
+   * @return the rungs run and their findings
+   */
   public CheckResponse check(String xml) {
     return check(xml, null, null);
   }
@@ -135,18 +165,30 @@ public final class Pain001Client {
    * @param xml the document as XML text
    * @param scheme comma-separated scheme profiles to add, or null
    * @param schematron a Schematron preset ({@code sepa}, {@code fednow}, {@code cbpr}), or null
+   * @return the rungs run and their findings
    */
   public CheckResponse check(String xml, String scheme, String schematron) {
     return CheckResponse.from(call("POST", "/api/v1/check", checkPayload(xml, scheme, schematron)));
   }
 
-  /** {@code GET /api/v1/faces}: the faces the server can project to. */
+  /**
+   * {@code GET /api/v1/faces}: the faces the server can project to.
+   *
+   * @return each face's name, description and required bindings
+   */
   public List<FaceInfo> faces() {
     JsonNode body = call("GET", "/api/v1/faces", null);
     return Json.elements(body).stream().map(FaceInfo::from).toList();
   }
 
-  /** {@code POST /api/v1/faces/{face}} with the edition detected and no bindings. */
+  /**
+   * {@code POST /api/v1/faces/{face}} with the edition detected and no bindings.
+   *
+   * @param face a face name from {@link #faces()}, for example {@code berlin_group}
+   * @param xml the pain.001 document as XML text
+   * @return the projected payload and its loss report
+   * @throws IllegalArgumentException when {@code face} is not a plain name
+   */
   public FaceResponse projectFace(String face, String xml) {
     return projectFace(face, xml, null, null);
   }
@@ -159,6 +201,7 @@ public final class Pain001Client {
    * @param version the pain.001 edition, or null to detect it from the namespace
    * @param bindings side inputs the message does not carry (values may be maps, lists, strings or
    *     numbers), or null
+   * @return the projected payload and its loss report
    * @throws IllegalArgumentException when {@code face} is not a plain name
    */
   public FaceResponse projectFace(
@@ -176,6 +219,7 @@ public final class Pain001Client {
    * @param method the HTTP method, for example {@code GET}
    * @param path the path below the base URL, starting with {@code /}
    * @param body the JSON body, or null to send none
+   * @return the status and the leniently parsed body
    * @throws UncheckedIOException when the request cannot be sent or times out (after the last
    *     attempt, when a {@link RetryPolicy} applies)
    */
@@ -353,19 +397,32 @@ public final class Pain001Client {
     /**
      * The server's base URL, for example {@code http://127.0.0.1:8000}: http or https, with a
      * host, and no query or fragment. A trailing slash is ignored.
+     *
+     * @param baseUrl the server's base URL
+     * @return this builder
      */
     public Builder baseUrl(String baseUrl) {
       this.baseUrl = baseUrl;
       return this;
     }
 
-    /** An API key, sent as {@code Authorization: Bearer <key>}; null sends none. */
+    /**
+     * An API key, sent as {@code Authorization: Bearer <key>}; null sends none.
+     *
+     * @param apiKey the key, or null
+     * @return this builder
+     */
     public Builder apiKey(String apiKey) {
       this.apiKey = apiKey;
       return this;
     }
 
-    /** The connect and per-request timeout; 30 seconds when not set. */
+    /**
+     * The connect and per-request timeout; 30 seconds when not set.
+     *
+     * @param timeout a positive duration
+     * @return this builder
+     */
     public Builder timeout(Duration timeout) {
       this.timeout = timeout;
       return this;
@@ -374,6 +431,9 @@ public final class Pain001Client {
     /**
      * Retries {@code GET} calls under {@code retryPolicy}; null (the default) sends every request
      * once. {@code POST} calls are never retried.
+     *
+     * @param retryPolicy the policy, or null for none
+     * @return this builder
      */
     public Builder retryPolicy(RetryPolicy retryPolicy) {
       this.retryPolicy = retryPolicy;
@@ -382,6 +442,8 @@ public final class Pain001Client {
 
     /**
      * Builds the client.
+     *
+     * @return the immutable, thread-safe client
      *
      * @throws IllegalArgumentException when the base URL is missing or malformed, or the timeout
      *     is not positive
