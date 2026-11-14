@@ -20,6 +20,14 @@ will be 0.0.86.
 
 ### Added
 
+- Fuzz tests with Jazzer 0.30.0 (`jazzer-junit`, test scope, running on
+  JUnit 6.1.3): `ResponseDecodingFuzzTest` fuzzes the response-body
+  parse and every record decoder, and `ClientResponseFuzzTest` fuzzes
+  every typed call against a loopback server answering an arbitrary
+  status and body, checking the documented exceptions, `detail` and
+  message. Their seeds run in `make check`; `make fuzz` fuzzes, and a
+  new `Fuzz` workflow fuzzes each target for 60 seconds on every pull
+  request. `.mvn/checksums` re-recorded with `make lock`.
 - `GenerationRefusedException`, a subclass of `Pain001ApiException`
   that `generate` raises when the server refuses the data (HTTP 422
   with `success: false`, from pain001 0.0.87). Its `response()` is the
