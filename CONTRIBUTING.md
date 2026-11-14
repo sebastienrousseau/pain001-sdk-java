@@ -41,6 +41,27 @@ PAIN001_BASE_URL=http://127.0.0.1:8000 make example
 
 Without `PAIN001_BASE_URL` those tests skip, and say so.
 
+## The README demo
+
+`.github/demo.gif` is rendered from `.github/demo.tape` by `make demo`,
+never recorded by hand. It needs [vhs](https://github.com/charmbracelet/vhs)
+(with ttyd and ffmpeg) and a `pain001` server binary, taken from
+`PAIN001_SERVER` or, if that is unset, from `PATH`; `make demo` stops
+with an error when neither is there. Install the server the way CI
+does, hash-pinned:
+
+```sh
+uv venv /tmp/pain001-srv
+uv pip install --python /tmp/pain001-srv/bin/python --require-hashes -r ci/server-requirements.txt
+PAIN001_SERVER=/tmp/pain001-srv/bin/pain001 make demo
+```
+
+The tape starts `pain001 serve` on `127.0.0.1:18767` in a temporary
+directory, runs `examples/GenerateCreditTransfer.java` against it with
+the kit's synthetic CSV, and stops the server. Nothing leaves the
+loopback interface. Re-render the GIF in the same change whenever the
+example's output changes.
+
 ## What the tests are for
 
 - `Pain001ClientTest`: request shape, response mapping and error mapping

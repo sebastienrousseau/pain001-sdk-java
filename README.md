@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  No demo recording: this is a library with no terminal interface of its own, and every call needs a running server. <code>make example</code> is the runnable demonstration.
+  <img src="https://raw.githubusercontent.com/sebastienrousseau/pain001-sdk-java/main/.github/demo.gif" alt="The GenerateCreditTransfer example calling a local pain001 server: health check, validation of the synthetic credit-transfer CSV, generation of a pain.001.001.09 file, then the first lines of that XML" width="100%" />
 </p>
 
 ---
@@ -231,8 +231,8 @@ There is no `docs/BENCHMARKS.md` yet, because there are no results.
 ## Examples
 
 - [`examples/GenerateCreditTransfer.java`](examples/GenerateCreditTransfer.java):
-  generates a pain.001.001.09 file from the conformance kit's synthetic
-  credit-transfer CSV. Run `make example` with a server listening at
+  checks the server's health, validates the conformance kit's synthetic
+  credit-transfer CSV and generates a pain.001.001.09 file from it. Run `make example` with a server listening at
   `PAIN001_BASE_URL` (default `http://127.0.0.1:8000`); it writes
   `target/credit-transfer.xml`. CI runs it against a live server.
 

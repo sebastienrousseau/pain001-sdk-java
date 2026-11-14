@@ -20,6 +20,12 @@ will be 0.0.86.
 
 ### Added
 
+- A README demo, `.github/demo.gif`, rendered by `make demo` from
+  `.github/demo.tape`: the example program against `pain001 serve` on
+  loopback. `make demo` takes the server from `PAIN001_SERVER` or
+  `PATH` (see `CONTRIBUTING.md`).
+- `examples/GenerateCreditTransfer.java` now also calls `health` and
+  `validate` before `generate`, printing one line per step.
 - Fuzz tests with Jazzer 0.30.0 (`jazzer-junit`, test scope, running on
   JUnit 6.1.3): `ResponseDecodingFuzzTest` fuzzes the response-body
   parse and every record decoder, and `ClientResponseFuzzTest` fuzzes

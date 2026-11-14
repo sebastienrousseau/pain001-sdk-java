@@ -14,6 +14,8 @@
 
 MVN ?= ./mvnw
 OSV_SCANNER ?= osv-scanner
+VHS ?= vhs
+PAIN001_SERVER ?= $(shell command -v pain001)
 LOCK_REPO ?= /tmp/pain001-sdk-java-lock-repo
 TC := -Daether.artifactResolver.postProcessor.trustedChecksums
 JAVA_FILES := $(shell find src examples -name '*.java' | LC_ALL=C sort)
@@ -21,7 +23,7 @@ EXAMPLE_CP = target/classes:$$(cat target/classpath.txt)
 FUZZ_TARGETS ?= ResponseDecodingFuzzTest ClientResponseFuzzTest
 FUZZ_TIME ?= 60s
 
-.PHONY: help check format-check size verify build test lint conformance classpath example-compile example fuzz lock sbom audit clean
+.PHONY: help check format-check size verify build test lint conformance classpath example-compile example demo fuzz lock sbom audit clean
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /: /'
@@ -73,6 +75,15 @@ fuzz: ## Fuzz each Jazzer target for FUZZ_TIME (60s); findings land in its seed 
 	@for t in $(FUZZ_TARGETS); do \
 	  JAZZER_FUZZ=1 JAZZER_MAX_DURATION=$(FUZZ_TIME) $(MVN) -B test -Dtest="$$t" || exit 1; \
 	done
+
+demo: build example-compile ## Render .github/demo.gif with vhs against PAIN001_SERVER (see CONTRIBUTING)
+	@command -v $(VHS) > /dev/null || { echo "demo: vhs not found (https://github.com/charmbracelet/vhs)"; exit 1; }
+	@test -n "$(PAIN001_SERVER)" && test -x "$(PAIN001_SERVER)" || { \
+	  echo "demo: no pain001 server binary; set PAIN001_SERVER or put pain001 on PATH"; \
+	  echo "      install it from ci/server-requirements.txt (see CONTRIBUTING.md)"; exit 1; }
+	DEMO_ROOT="$(CURDIR)" PAIN001_SERVER="$(PAIN001_SERVER)" \
+	  DEMO_CP="$(CURDIR)/target/example-classes:$(CURDIR)/target/classes:$$(cat target/classpath.txt)" \
+	  $(VHS) .github/demo.tape
 
 lock: ## Re-record .mvn/checksums from a clean local repository
 	rm -rf .mvn/checksums $(LOCK_REPO)
