@@ -72,11 +72,11 @@ ad0aa36596cc4c0247fea54d5acc1e47b2b8d81e744c3c89e5dacb531d62a670  com/github/oow
 fdabdfa4c7dea6354c77f25bddd18e48ee22cd4b9815cbecc37a30f2542cd133  com/github/package-url/packageurl-java/1.4.1/packageurl-java-1.4.1.pom
 e45551727707acc0c56ac62d56964332ea0f138d6cc3656d988b9369150f5247  com/github/package-url/packageurl-java/1.5.0/packageurl-java-1.5.0.jar
 42fdf46c5355bcb9aa0b240d52ac9d89ee728f8cb1386e43127588af916b3e06  com/github/package-url/packageurl-java/1.5.0/packageurl-java-1.5.0.pom
-f3e5a31cb56677dfd239f38b51dea03ae2237e381899a3860e7a8cb3b0a4456e  com/github/siom79/japicmp/japicmp-base/0.26.5/japicmp-base-0.26.5.pom
-f4d8bf61c1c110b5aabba445700ff60f1116d4cd3bc2a198498101bc8816780d  com/github/siom79/japicmp/japicmp-maven-plugin/0.26.5/japicmp-maven-plugin-0.26.5.jar
-5ee66d5e886552c4f49f1409da9fdc11440c16c99a239696c1544c111975e60a  com/github/siom79/japicmp/japicmp-maven-plugin/0.26.5/japicmp-maven-plugin-0.26.5.pom
-0383aeb8824981f3a76a984f021bc8720bff06b4c5b5e2f67b08d9dc95f677fd  com/github/siom79/japicmp/japicmp/0.26.5/japicmp-0.26.5.jar
-9a67f4218a0df23e766eca7aef01e4c19ba202f8f4f923330a74ba2e5ffad1ba  com/github/siom79/japicmp/japicmp/0.26.5/japicmp-0.26.5.pom
+ca9c5af496021ce3c3ad519ab3c3233de41985be05e2236bee37641ab8cb61af  com/github/siom79/japicmp/japicmp-base/0.27.0/japicmp-base-0.27.0.pom
+4f69f4aaafa1aa3c8713b07a7ab5dc0be078910c6f3ba77be8d3fee4f81c4146  com/github/siom79/japicmp/japicmp-maven-plugin/0.27.0/japicmp-maven-plugin-0.27.0.jar
+a265c58dc753288ad0058da35dc98a7b3acfc8e62d7dd040ddf7ef83087f1e81  com/github/siom79/japicmp/japicmp-maven-plugin/0.27.0/japicmp-maven-plugin-0.27.0.pom
+9df7ea5eb7a8b7431a867d5151b6cc759e7844e1c7d857fc8dbbe3604f710f6c  com/github/siom79/japicmp/japicmp/0.27.0/japicmp-0.27.0.jar
+3b4261f703f167b0aa9b1fbb4d6c8b3dbf7b64d138fe76358637c00f9e4f4a01  com/github/siom79/japicmp/japicmp/0.27.0/japicmp-0.27.0.pom
 766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7  com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar
 19889dbdf1b254b2601a5ee645b8147a974644882297684c798afe5d63d78dfe  com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.pom
 f8810ace50ddfe3fda83d1126de65d99d5d2515a14a36b88beb1b99a47697836  com/google/code/gson/gson-parent/2.13.1/gson-parent-2.13.1.pom
@@ -595,8 +595,8 @@ e316255bbfcd9fe50d165314b85abb2b33cb2a66a93c491db648e498a82c2de1  org/checkerfra
 f55a922027a78fdd8b3ea15a0d8bfe3fec6a5ceac30c86aa8afa4a5b9b0df603  org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.pom
 508c83c62c344f6f7ee28f47b88a8797d6116d043bfd1ca0576c828dd1df2880  org/checkerframework/checker-qual/3.49.5/checker-qual-3.49.5.jar
 57ef5a1efc69d1470e45d0d1230880b6def5f17dcc55597ec43e37444c149262  org/checkerframework/checker-qual/3.49.5/checker-qual-3.49.5.pom
-f366631cd160ffc5936efb9f86ceca5e1ed568552f7492842a459747e73d197e  org/codehaus/mojo/build-helper-maven-plugin/3.7.0/build-helper-maven-plugin-3.7.0.jar
-5d61de9577ce1095ab30c0f1f458f4667ea4b7cb8026b68da160273c462d1e07  org/codehaus/mojo/build-helper-maven-plugin/3.7.0/build-helper-maven-plugin-3.7.0.pom
+9f2fe8274c9d08e7ead812cb113eb5a605f7699eb26c3f4c8d397faa930018d5  org/codehaus/mojo/build-helper-maven-plugin/3.8.0/build-helper-maven-plugin-3.8.0.jar
+89e57f7e78012910495e35a9ac4835999cb8d3b1f2b8fc67f445d5243a12bc60  org/codehaus/mojo/build-helper-maven-plugin/3.8.0/build-helper-maven-plugin-3.8.0.pom
 888b0162ad7fabdeb6ee34ff6123025bffe34e064761da962e87de5c8cce5d39  org/codehaus/mojo/mojo-parent/97/mojo-parent-97.pom
 4c07814ff4a39199999ae82bba1e38aa4f25637467fcac6a66ed63a76535799a  org/codehaus/plexus/plexus-archiver/4.10.0/plexus-archiver-4.10.0.jar
 93ca001fd33da53d38b74f6daf19e71bc9736ed6143091ff9003cd4c05ace6c9  org/codehaus/plexus/plexus-archiver/4.10.0/plexus-archiver-4.10.0.pom
