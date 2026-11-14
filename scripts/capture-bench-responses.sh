@@ -14,13 +14,22 @@ cd "$(dirname "$0")/.."
 out=src/bench/resources/com/pain001/sdk/bench
 mkdir -p "$out"
 
+# The response lands in a file before it is formatted: piping curl into
+# an interpreter reads as download-then-run to Scorecard, even though
+# json.tool only parses and prints it.
+raw=$(mktemp)
+trap 'rm -f "$raw"' EXIT
+tidy() { # name
+  python3 -I -m json.tool --indent 2 "$raw" "$out/$1.json"
+}
 post() { # name path python-expression-for-the-body
   python3 -I -c "import json,sys; f=lambda n: open('conformance/fixtures/'+n, encoding='utf-8').read(); print(json.dumps($3))" \
-    | curl -fsS -H 'Content-Type: application/json' --data-binary @- "$PAIN001_BASE_URL$2" \
-    | python3 -I -m json.tool --indent 2 > "$out/$1.json"
+    | curl -fsS -o "$raw" -H 'Content-Type: application/json' --data-binary @- "$PAIN001_BASE_URL$2"
+  tidy "$1"
 }
 get() { # name path
-  curl -fsS "$PAIN001_BASE_URL$2" | python3 -I -m json.tool --indent 2 > "$out/$1.json"
+  curl -fsS -o "$raw" "$PAIN001_BASE_URL$2"
+  tidy "$1"
 }
 
 csv='f("credit-transfer.pain.001.001.09.csv")'
