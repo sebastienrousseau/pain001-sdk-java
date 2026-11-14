@@ -35,7 +35,14 @@
   <scm>
     <url>https://github.com/sebastienrousseau/pain001-sdk-java</url>
     <connection>scm:git:https://github.com/sebastienrousseau/pain001-sdk-java.git</connection>
+    <developerConnection>scm:git:git@github.com:sebastienrousseau/pain001-sdk-java.git</developerConnection>
+    <tag>v${project.version}</tag>
   </scm>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/sebastienrousseau/pain001-sdk-java/issues</url>
+  </issueManagement>
 
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
@@ -45,6 +52,10 @@
     <junit.version>6.1.3</junit.version>
     <jazzer.version>0.30.0</jazzer.version>
     <jmh.version>1.37</jmh.version>
+    <!-- Reproducible jars: the release workflow rebuilds them in the
+         publish job and checks the bytes against SHA256SUMS. -->
+    <project.build.outputTimestamp>2026-11-14T00:00:00Z</project.build.outputTimestamp>
+    <japicmp.baseline.jar>${project.build.directory}/japicmp-baseline.jar</japicmp.baseline.jar>
   </properties>
 
   <dependencyManagement>
@@ -150,6 +161,64 @@
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>build-helper-maven-plugin</artifactId>
           <version>3.7.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.4.0</version>
+        </plugin>
+        <plugin>
+          <!-- The Javadoc: the -javadoc jar on Maven Central and the API
+               reference in the manual (`make manual`). Every public type
+               and member must be documented; a warning fails. -->
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.12.0</version>
+          <configuration>
+            <release>17</release>
+            <doclint>all</doclint>
+            <failOnWarnings>true</failOnWarnings>
+            <quiet>true</quiet>
+            <show>public</show>
+            <doctitle>pain001-sdk-java ${project.version} API</doctitle>
+            <windowtitle>pain001-sdk-java ${project.version} API</windowtitle>
+            <bottom><![CDATA[&copy; 2026 <a href="https://sebastienrousseau.com/" rel="author">Sebastien Rousseau</a>]]></bottom>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>3.2.8</version>
+        </plugin>
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>0.12.0</version>
+        </plugin>
+        <plugin>
+          <!-- API breakage against the last release (`make api-check`). The
+               Makefile downloads the baseline jar and checks its SHA-256,
+               then passes it as japicmp.baseline.jar. -->
+          <groupId>com.github.siom79.japicmp</groupId>
+          <artifactId>japicmp-maven-plugin</artifactId>
+          <version>0.26.5</version>
+          <configuration>
+            <oldVersion>
+              <file>
+                <path>${japicmp.baseline.jar}</path>
+              </file>
+            </oldVersion>
+            <newVersion>
+              <file>
+                <path>${project.build.directory}/${project.build.finalName}.jar</path>
+              </file>
+            </newVersion>
+            <parameter>
+              <onlyModified>true</onlyModified>
+              <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+              <breakBuildOnSourceIncompatibleModifications>true</breakBuildOnSourceIncompatibleModifications>
+            </parameter>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.cyclonedx</groupId>
@@ -392,6 +461,84 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <!-- Maven Central publication, used only by the release workflow
+           (`make release-dry-run` locally): sources and Javadoc jars, GPG
+           signatures, and the Central Portal upload. The Portal token
+           comes from the `central` server in settings.xml, which the
+           workflow writes from repository secrets. -->
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <configuration>
+                  <gpgArguments>
+                    <arg>--pinentry-mode</arg>
+                    <arg>loopback</arg>
+                  </gpgArguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <!-- Replaces maven-deploy-plugin. ignorePublishedComponents
+                 makes a re-run safe once the version is on Central. A dry
+                 run (`make release-dry-run`) sets central.skipUpload, so
+                 the bundle is built in target/central-publishing/ and
+                 nothing is sent, and uses ci/dry-run-settings.xml, whose
+                 `central` server has placeholder credentials. -->
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>central</publishingServerId>
+              <autoPublish>true</autoPublish>
+              <waitUntil>published</waitUntil>
+              <ignorePublishedComponents>${central.ignorePublished}</ignorePublishedComponents>
+              <skipUpload>${central.skipUpload}</skipUpload>
+              <deploymentName>pain001-sdk-java ${project.version}</deploymentName>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+      <properties>
+        <central.skipUpload>false</central.skipUpload>
+        <central.ignorePublished>true</central.ignorePublished>
+      </properties>
     </profile>
   </profiles>
 </project>

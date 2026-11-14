@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 OR MIT -->
+<!--
+  Maven settings for release dry runs and `make lock` only. The Central
+  Portal plugin reads the `central` server even when it does not upload;
+  these placeholders are never sent anywhere, because the dry run sets
+  central.skipUpload. The real credentials exist only as secrets in the
+  `release` environment (DEVELOPMENT.md).
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
+  <servers>
+    <server>
+      <id>central</id>
+      <username>dry-run</username>
+      <password>dry-run</password>
+    </server>
+  </servers>
+</settings>

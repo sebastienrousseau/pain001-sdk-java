@@ -21,16 +21,37 @@ TC := -Daether.artifactResolver.postProcessor.trustedChecksums
 JAVA_FILES := $(shell find src examples -name '*.java' | LC_ALL=C sort)
 EXAMPLE_CP = target/classes:$$(cat target/classpath.txt)
 EXAMPLES := $(sort $(basename $(notdir $(wildcard examples/*.java))))
-LOCK_PROFILES := bench
+LOCK_PROFILES := bench,release
+CENTRAL := https://repo1.maven.org/maven2/com/pain001/pain001-sdk
 FUZZ_TARGETS ?= ResponseDecodingFuzzTest ClientResponseFuzzTest
 FUZZ_TIME ?= 60s
 
-.PHONY: help check format-check size verify build test lint conformance classpath example-compile example examples bench-build bench bench-smoke demo fuzz lock sbom audit clean
+.PHONY: help check format-check size verify build test lint conformance classpath example-compile example examples bench-build bench bench-smoke demo fuzz lock sbom audit clean \
+  api-check javadoc release-dry-run
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /: /'
 
 check: format-check size verify example-compile ## Every local gate
+
+api-check: ## japicmp against the latest release on Maven Central (no-op before the first)
+	@latest=$$(curl -fsS "$(CENTRAL)/maven-metadata.xml" 2>/dev/null | sed -n 's:.*<release>\(.*\)</release>.*:\1:p'); \
+	if [ -z "$$latest" ]; then \
+	  echo "api-check: no release of com.pain001:pain001-sdk on Maven Central yet; nothing to compare"; exit 0; fi; \
+	mkdir -p target; jar="target/japicmp-baseline.jar"; \
+	curl -fsSL -o "$$jar" "$(CENTRAL)/$$latest/pain001-sdk-$$latest.jar"; \
+	want=$$(curl -fsSL "$(CENTRAL)/$$latest/pain001-sdk-$$latest.jar.sha256" | cut -c1-64); \
+	got=$$(shasum -a 256 "$$jar" 2>/dev/null || sha256sum "$$jar"); \
+	[ "$${got%% *}" = "$$want" ] || { echo "api-check: baseline $$latest does not match its .sha256"; exit 1; }; \
+	echo "api-check: comparing with $$latest"; \
+	$(MVN) -B -q -DskipTests package japicmp:cmp -Djapicmp.baseline.jar="$(CURDIR)/$$jar"
+
+javadoc: ## The Javadoc (doclint all, warnings fail) into target/reports/apidocs
+	$(MVN) -B -q -DskipTests compile javadoc:javadoc
+
+release-dry-run: ## The release build (jars, sources, Javadoc, SBOM, bundle), signed with GPG_KEYNAME if set, not published
+	$(MVN) -B -Prelease deploy cyclonedx:makeBom -DoutputFormat=json \
+	  -Dcentral.skipUpload=true -Dcentral.ignorePublished=false -s ci/dry-run-settings.xml $(if $(GPG_KEYNAME),-Dgpg.keyname=$(GPG_KEYNAME),-Dgpg.skip=true)
 
 format-check: ## No tabs, no trailing spaces, LF endings, final newline
 	@bad=0; \
@@ -118,8 +139,9 @@ demo: build example-compile ## Render .github/demo.gif with vhs against PAIN001_
 lock: ## Re-record .mvn/checksums from a clean local repository
 	rm -rf .mvn/checksums $(LOCK_REPO)
 	$(MVN) -B -q -Dmaven.repo.local=$(LOCK_REPO) $(TC).record=true -P$(LOCK_PROFILES) \
-	  clean verify pmd:check dependency:build-classpath cyclonedx:makeBom \
-	  -Dmdep.outputFile=target/classpath.txt -DoutputFormat=json -DincludeTestScope=true
+	  clean deploy pmd:check dependency:build-classpath cyclonedx:makeBom javadoc:javadoc japicmp:cmp \
+	  -Dmdep.outputFile=target/classpath.txt -DoutputFormat=json -DincludeTestScope=true \
+	  -Dgpg.skip=true -Dcentral.skipUpload=true -Dcentral.ignorePublished=false -Djapicmp.skip=true -s ci/dry-run-settings.xml
 	rm -rf $(LOCK_REPO)
 
 sbom: ## CycloneDX SBOM of the resolved dependencies (target/bom.json)
