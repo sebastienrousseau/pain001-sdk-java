@@ -1,0 +1,1 @@
+{"face": "berlin_group", "version": "pain.001.001.09", "payload": {"a": 1}, "loss_report": {"face": "berlin_group", "total_source_elements": 4, "mapped_count": 3, "unmapped_count": 1, "is_lossless": false, "loss_ratio": 0.25, "mapped_paths": ["/a"], "unmapped_paths": ["/b"]}}

@@ -4,7 +4,8 @@
 # size, the Maven build (javac -Xlint:all -Werror, unit tests, PMD
 # complexity ceilings) and the example's compile. The conformance kit and
 # the typed tests run inside `mvn verify` when PAIN001_BASE_URL is set,
-# and skip otherwise.
+# and skip otherwise. The Jazzer fuzz tests run their committed seeds as
+# regression tests there too; `make fuzz` fuzzes them.
 #
 # ./mvnw pins Maven 3.10.0 (SHA-256 checked) and .mvn/maven.config makes
 # Maven refuse any artifact whose SHA-256 is not recorded in
@@ -17,8 +18,10 @@ LOCK_REPO ?= /tmp/pain001-sdk-java-lock-repo
 TC := -Daether.artifactResolver.postProcessor.trustedChecksums
 JAVA_FILES := $(shell find src examples -name '*.java' | LC_ALL=C sort)
 EXAMPLE_CP = target/classes:$$(cat target/classpath.txt)
+FUZZ_TARGETS ?= ResponseDecodingFuzzTest ClientResponseFuzzTest
+FUZZ_TIME ?= 60s
 
-.PHONY: help check format-check size verify build test lint conformance classpath example-compile example lock sbom audit clean
+.PHONY: help check format-check size verify build test lint conformance classpath example-compile example fuzz lock sbom audit clean
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /: /'
@@ -65,6 +68,11 @@ example-compile: classpath ## Compile examples/ against the built SDK
 
 example: classpath ## Generate target/credit-transfer.xml through PAIN001_BASE_URL
 	java -cp "$(EXAMPLE_CP)" examples/GenerateCreditTransfer.java
+
+fuzz: ## Fuzz each Jazzer target for FUZZ_TIME (60s); findings land in its seed directory
+	@for t in $(FUZZ_TARGETS); do \
+	  JAZZER_FUZZ=1 JAZZER_MAX_DURATION=$(FUZZ_TIME) $(MVN) -B test -Dtest="$$t" || exit 1; \
+	done
 
 lock: ## Re-record .mvn/checksums from a clean local repository
 	rm -rf .mvn/checksums $(LOCK_REPO)
