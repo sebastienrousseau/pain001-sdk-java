@@ -60,6 +60,10 @@ class ClientResponseFuzzTest {
 
   @BeforeAll
   static void start() throws IOException {
+    // Headers and body go out in two writes; without TCP_NODELAY, Nagle and delayed ACK stall
+    // each exchange about 40 ms on Linux loopback. The JDK reads it when its first HttpServer
+    // starts, so it takes effect in a fuzzing run, where this is the only test class.
+    System.setProperty("sun.net.httpserver.nodelay", "true");
     server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
     server.createContext("/", ClientResponseFuzzTest::answer);
     server.start();
