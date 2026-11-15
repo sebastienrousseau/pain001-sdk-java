@@ -16,6 +16,13 @@ is 0.0.88, the first published to Maven Central.
 - The release notes' Checksums block lists `SHA256SUMS` itself, as
   it is an attached asset; the 0.0.88 notes left it out, and the
   family's ecosystem audit requires every asset to be listed.
+- `make api-check` compares against the release on Maven Central
+  again. japicmp also resolves the SDK's own jar for its classpath, and
+  that jar, built in the same run, has no entry in `.mvn/checksums`, so
+  the trusted-checksum check refused it and the job failed on every pull
+  request once 0.0.88 was published. japicmp now skips that lookup
+  (`ignoreMissingNewVersion`); it still reads both jars from their files
+  and still fails on a breaking change.
 
 ## [0.0.88] - 2026-11-14
 
