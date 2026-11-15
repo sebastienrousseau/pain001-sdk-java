@@ -11,6 +11,8 @@ is 0.0.88, the first published to Maven Central.
 
 ## [Unreleased]
 
+## [0.0.89] - Unreleased
+
 ### Fixed
 
 - The release notes' Checksums block lists `SHA256SUMS` itself, as
