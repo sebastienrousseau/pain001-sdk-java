@@ -9,6 +9,14 @@ and this project adheres to the pain001 suite's `0.0.x` versioning: each
 release moves by `0.0.1`, in lockstep with the suite. The first release
 is 0.0.88, the first published to Maven Central.
 
+## [Unreleased]
+
+### Fixed
+
+- The release notes' Checksums block lists `SHA256SUMS` itself, as
+  it is an attached asset; the 0.0.88 notes left it out, and the
+  family's ecosystem audit requires every asset to be listed.
+
 ## [0.0.88] - 2026-11-14
 
 ### Highlights
