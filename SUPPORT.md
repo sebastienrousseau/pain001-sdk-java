@@ -32,7 +32,7 @@ Do not open a public issue. Follow [SECURITY.md](SECURITY.md).
 
 | Version | Supported | Notes |
 | :--- | :--- | :--- |
-| 0.0.89 | Yes | Current release; tested against pain001 0.0.88 |
+| 0.0.89 | Yes | Current release; tested against pain001 0.0.89 |
 | 0.0.88 | No | Superseded by 0.0.89 |
 | Older | No | No version before 0.0.88 was published |
 
