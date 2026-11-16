@@ -21,7 +21,7 @@ body:
     id: server_version
     attributes:
       label: pain001 server version (from health())
-      placeholder: "0.0.89"
+      placeholder: "0.0.90"
     validations:
       required: true
   - type: dropdown

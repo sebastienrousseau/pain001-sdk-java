@@ -11,6 +11,14 @@ is 0.0.88, the first published to Maven Central.
 
 ## [Unreleased]
 
+### Changed
+
+- CI tests against pain001 0.0.90 (`ci/server-requirements.in`),
+  which fixes a race in core's `lazy_module` that made a freshly
+  started `pain001 serve` answer its first parallel requests with
+  HTTP 500. The vendored conformance kit is unchanged: core's
+  `conformance/` is identical between 0.0.88 and 0.0.90.
+
 ## [0.0.89] - 2026-11-16
 
 In lockstep with pain001 0.0.89.
