@@ -65,14 +65,14 @@
 <dependency>
   <groupId>com.pain001</groupId>
   <artifactId>pain001-sdk</artifactId>
-  <version>0.0.88</version>
+  <version>0.0.89</version>
 </dependency>
 ```
 
 Gradle (Kotlin DSL):
 
 ```kotlin
-implementation("com.pain001:pain001-sdk:0.0.88")
+implementation("com.pain001:pain001-sdk:0.0.89")
 ```
 
 0.0.88 is the first release published to Maven Central, in lockstep

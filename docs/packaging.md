@@ -16,24 +16,24 @@ SHA-1 files.
 <dependency>
   <groupId>com.pain001</groupId>
   <artifactId>pain001-sdk</artifactId>
-  <version>0.0.88</version>
+  <version>0.0.89</version>
 </dependency>
 ```
 
-Gradle: `implementation("com.pain001:pain001-sdk:0.0.88")`.
+Gradle: `implementation("com.pain001:pain001-sdk:0.0.89")`.
 
 The release workflow (`.github/workflows/release.yml`) builds these
-from the signed tag `v0.0.88`, attaches them to the GitHub release with
-a CycloneDX SBOM (`pain001-sdk-0.0.88.cdx.json`), `SHA256SUMS` and a
+from the signed tag `v0.0.89`, attaches them to the GitHub release with
+a CycloneDX SBOM (`pain001-sdk-0.0.89.cdx.json`), `SHA256SUMS` and a
 build provenance attestation, then publishes to Maven Central.
 
 ## Verifying a download
 
 ```sh
 sha256sum -c SHA256SUMS                       # from the GitHub release
-gh attestation verify pain001-sdk-0.0.88.jar --repo sebastienrousseau/pain001-sdk-java
+gh attestation verify pain001-sdk-0.0.89.jar --repo sebastienrousseau/pain001-sdk-java
 gpg --import MAVEN-SIGNING-KEY.asc               # or fetch it from keyserver.ubuntu.com
-gpg --verify pain001-sdk-0.0.88.jar.asc pain001-sdk-0.0.88.jar
+gpg --verify pain001-sdk-0.0.89.jar.asc pain001-sdk-0.0.89.jar
 ```
 
 The Maven artifacts are signed by the RSA-4096 release key

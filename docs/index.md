@@ -14,7 +14,7 @@ sibling SDKs agree with it.
 <dependency>
   <groupId>com.pain001</groupId>
   <artifactId>pain001-sdk</artifactId>
-  <version>0.0.88</version>
+  <version>0.0.89</version>
 </dependency>
 ```
 
