@@ -9,12 +9,27 @@ and this project adheres to the pain001 suite's `0.0.x` versioning: each
 release moves by `0.0.1`, in lockstep with the suite. The first release
 is 0.0.88, the first published to Maven Central.
 
-## [Unreleased]
+## [0.0.89] - 2026-11-16
 
-## [0.0.89] - Unreleased
+In lockstep with pain001 0.0.89.
+
+### Highlights
+
+- **In lockstep with pain001 0.0.89**: CI runs the client against a
+  live pain001 0.0.89 server, and the vendored conformance kit matches
+  core's 0.0.89 kit byte for byte.
+- **API breakage check restored**: `make api-check` compares every pull
+  request with the release on Maven Central again; it had failed since
+  0.0.88 was published.
+- **Every release asset in the checksums**: the release notes'
+  Checksums block now lists `SHA256SUMS` itself, which 0.0.88's notes
+  left out.
 
 ### Changed
 
+- CI tests against pain001 0.0.89, the release this SDK ships with
+  (`ci/server-requirements.in`). The vendored conformance kit is
+  unchanged: core's 0.0.89 kit is byte-identical to 0.0.88's.
 - `./mvnw` runs Maven 3.10.1 (was 3.10.0), SHA-256 checked as before.
 
 ### Fixed
