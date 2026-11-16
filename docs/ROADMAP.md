@@ -6,7 +6,14 @@ The SDK follows the pain001 suite: each suite release is a release of
 this client, at the same version. What comes next is driven by what the
 server adds and what the conformance kit pins.
 
-## 0.0.88 (this release)
+## 0.0.89 (this release)
+
+- In lockstep with pain001 0.0.89; CI tests against that server.
+- `make api-check` compares every pull request with the release on
+  Maven Central again.
+- The release notes' Checksums block lists `SHA256SUMS` itself.
+
+## 0.0.88
 
 - First publication to Maven Central as `com.pain001:pain001-sdk`,
   signed, with a CycloneDX SBOM, SHA256SUMS and build provenance.
@@ -20,8 +27,6 @@ server adds and what the conformance kit pins.
 - **Typed async jobs.** `/api/v1/generate/async`, `/api/v1/status/{id}`
   and `/api/v1/download/{id}` are reachable only through `request`. They
   become typed methods once the kit has cases for them.
-- **API breakage check against a release.** japicmp is wired and starts
-  comparing once 0.0.88 is on Maven Central.
 - **Java floor.** The floor stays at Java 17 while it is a supported LTS
   for the major distributions; a raise is announced one release ahead in
   the changelog ([policy](POLICIES.md)).

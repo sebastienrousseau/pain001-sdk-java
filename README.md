@@ -75,7 +75,7 @@ Gradle (Kotlin DSL):
 implementation("com.pain001:pain001-sdk:0.0.89")
 ```
 
-0.0.88 is the first release published to Maven Central, in lockstep
+0.0.88 was the first release published to Maven Central, in lockstep
 with the pain001 suite. Each release is signed with GPG, ships a
 CycloneDX SBOM and `SHA256SUMS` on its GitHub release, and carries a
 build provenance attestation ([`docs/packaging.md`](docs/packaging.md)).
