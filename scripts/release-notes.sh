@@ -13,6 +13,13 @@
 # tag (gh api; needs GH_TOKEN). The notes must not contain an em dash.
 set -euo pipefail
 
+# SHA256SUMS is attached too, so its own hash belongs in the block.
+sums_self() {
+  local h
+  h=$( (sha256sum "$1" 2>/dev/null || shasum -a 256 "$1") | cut -d" " -f1)
+  printf "%s  SHA256SUMS\n" "$h"
+}
+
 cd "$(dirname "$0")/.."
 version=${1:?usage: release-notes.sh VERSION SHA256SUMS}
 sums=${2:?usage: release-notes.sh VERSION SHA256SUMS}
@@ -48,7 +55,7 @@ fi
 notes=$(
   printf '## Highlights ⭐️\n\n%s\n\n' "$highlights"
   printf "## What's Changed\n\n%s\n\n" "$changes"
-  printf '## Checksums\n\nSHA-256 of every asset attached to this release:\n\n```text\n%s\n```\n\n' "$(cat "$sums")"
+  printf '## Checksums\n\nSHA-256 of every asset attached to this release:\n\n```text\n%s\n```\n\n' "$(cat "$sums"; sums_self "$sums")"
   printf '**Full Changelog**: %s\n' "$full"
 )
 if printf '%s' "$notes" | grep -q '—'; then

@@ -7,7 +7,7 @@
 
   <groupId>com.pain001</groupId>
   <artifactId>pain001-sdk</artifactId>
-  <version>0.0.88</version>
+  <version>0.0.89</version>
   <packaging>jar</packaging>
 
   <name>pain001-sdk</name>
@@ -215,6 +215,13 @@
             </newVersion>
             <parameter>
               <onlyModified>true</onlyModified>
+              <!-- japicmp also resolves this project's own artifact for its
+                   classpath. That jar is the one just built, not a download,
+                   so it has no entry in .mvn/checksums and the trusted-checksum
+                   check refuses it. The comparison reads both jars from the
+                   <file> paths above; dependencies are still resolved, and
+                   verified, by Maven. -->
+              <ignoreMissingNewVersion>true</ignoreMissingNewVersion>
               <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
               <breakBuildOnSourceIncompatibleModifications>true</breakBuildOnSourceIncompatibleModifications>
             </parameter>

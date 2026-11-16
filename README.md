@@ -65,17 +65,17 @@
 <dependency>
   <groupId>com.pain001</groupId>
   <artifactId>pain001-sdk</artifactId>
-  <version>0.0.88</version>
+  <version>0.0.89</version>
 </dependency>
 ```
 
 Gradle (Kotlin DSL):
 
 ```kotlin
-implementation("com.pain001:pain001-sdk:0.0.88")
+implementation("com.pain001:pain001-sdk:0.0.89")
 ```
 
-0.0.88 is the first release published to Maven Central, in lockstep
+0.0.88 was the first release published to Maven Central, in lockstep
 with the pain001 suite. Each release is signed with GPG, ships a
 CycloneDX SBOM and `SHA256SUMS` on its GitHub release, and carries a
 build provenance attestation ([`docs/packaging.md`](docs/packaging.md)).
@@ -96,10 +96,10 @@ The one runtime dependency is Jackson databind (`com.fasterxml.jackson.core:jack
 
 - Java 17 or newer; CI builds and tests on Temurin 17 and 21 on Linux
   ([toolchain policy](docs/POLICIES.md)).
-- Maven 3.9.0 or newer to build from source (`./mvnw` brings 3.10.0).
+- Maven 3.9.0 or newer to build from source (`./mvnw` brings 3.10.1).
 - A running pain001 server (`pain001 serve`, from `pip install 'pain001[api]'`)
   to call. This SDK is a client: the generation and validation happen in
-  the server. CI tests against pain001 0.0.88, the latest released core.
+  the server. CI tests against pain001 0.0.89, the latest released core.
 
 ---
 
