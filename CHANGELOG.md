@@ -13,6 +13,10 @@ is 0.0.88, the first published to Maven Central.
 
 ## [0.0.89] - Unreleased
 
+### Changed
+
+- `./mvnw` runs Maven 3.10.1 (was 3.10.0), SHA-256 checked as before.
+
 ### Fixed
 
 - The release notes' Checksums block lists `SHA256SUMS` itself, as

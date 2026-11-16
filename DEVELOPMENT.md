@@ -12,7 +12,7 @@ conformance kit and the README demo.
 | Tool | Version | Why |
 | :--- | :--- | :--- |
 | JDK | 17 or newer (CI: Temurin 17 and 21) | The build floor is `maven.compiler.release` 17 |
-| Maven | 3.10.0 via `./mvnw` (SHA-256 checked) | Any 3.9.0+ works; older ones cannot verify `.mvn/checksums/` |
+| Maven | 3.10.1 via `./mvnw` (SHA-256 checked) | Any 3.9.0+ works; older ones cannot verify `.mvn/checksums/` |
 | Python | 3.12 with `uv` (or `venv` and `pip`) | The pain001 server for live tests, and MkDocs for the manual |
 | GNU Make | any | The task runner |
 | Optional | `osv-scanner`, `reuse`, `codespell`, `lychee`, `vhs` | The audit, licence, spelling, link and demo gates |
