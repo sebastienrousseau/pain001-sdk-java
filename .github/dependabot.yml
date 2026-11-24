@@ -39,3 +39,16 @@ updates:
       github-actions:
         patterns:
           - "*"
+
+  # The manual's build inputs (MkDocs Material), hash-locked.
+  - package-ecosystem: "pip"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
