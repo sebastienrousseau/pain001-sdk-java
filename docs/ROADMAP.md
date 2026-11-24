@@ -6,7 +6,12 @@ The SDK follows the pain001 suite: each suite release is a release of
 this client, at the same version. What comes next is driven by what the
 server adds and what the conformance kit pins.
 
-## 0.0.90 (this release)
+## 0.0.91 (this release)
+
+- In lockstep with pain001 0.0.91; CI tests against that server once
+  it is on PyPI.
+
+## 0.0.90 (released 2026-11-16)
 
 - In lockstep with pain001 0.0.90; CI tests against that server, which
   no longer answers its first parallel requests with HTTP 500.

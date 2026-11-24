@@ -9,6 +9,14 @@ and this project adheres to the pain001 suite's `0.0.x` versioning: each
 release moves by `0.0.1`, in lockstep with the suite. The first release
 is 0.0.88, the first published to Maven Central.
 
+## [Unreleased]
+
+### Changed
+
+- `./mvnw` runs Maven 3.10.2 (was 3.10.1), SHA-256 checked as before.
+- CI uses `actions/setup-java` 6.3.0 (was 6.2.0) and
+  `ossf/scorecard-action` 2.6.0 (was 2.5.0), pinned by commit SHA.
+
 ## [0.0.90] - 2026-11-16
 
 In lockstep with pain001 0.0.90.
