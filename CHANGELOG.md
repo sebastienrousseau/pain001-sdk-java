@@ -11,6 +11,14 @@ is 0.0.88, the first published to Maven Central.
 
 ## [Unreleased]
 
+### Security
+
+- The manual builds with mkdocs-material 9.8.2 (was 9.8.0), which fixes
+  GHSA-wxw8-4jgj-q85j, a path traversal in its privacy plugin that
+  affects 9.5.12 to 9.8.1; pymdown-extensions moves to 13.1.2.
+  Dependabot now watches `docs/`, which it did not, so this was never
+  offered.
+
 ### Changed
 
 - `./mvnw` runs Maven 3.10.2 (was 3.10.1), SHA-256 checked as before.
