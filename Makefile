@@ -10,7 +10,7 @@
 # runs all of it against a fresh server, as CI's conformance job does.
 # DEVELOPMENT.md maps every CI job to its target.
 #
-# ./mvnw pins Maven 3.10.1 (SHA-256 checked) and .mvn/maven.config makes
+# ./mvnw pins Maven 3.10.2 (SHA-256 checked) and .mvn/maven.config makes
 # Maven refuse any artifact whose SHA-256 is not recorded in
 # .mvn/checksums/. After a dependency or plugin change, `make lock`
 # re-records them from a clean local repository; review the diff.

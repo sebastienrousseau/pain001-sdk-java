@@ -11,6 +11,10 @@ is 0.0.88, the first published to Maven Central.
 
 ## [Unreleased]
 
+### Changed
+
+- `./mvnw` runs Maven 3.10.2 (was 3.10.1), SHA-256 checked as before.
+
 ## [0.0.90] - 2026-11-16
 
 In lockstep with pain001 0.0.90.
