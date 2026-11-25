@@ -9,7 +9,18 @@ and this project adheres to the pain001 suite's `0.0.x` versioning: each
 release moves by `0.0.1`, in lockstep with the suite. The first release
 is 0.0.88, the first published to Maven Central.
 
-## [Unreleased]
+## [0.0.91] - 2026-11-25
+
+In lockstep with pain001 0.0.91.
+
+### Highlights
+
+- **In lockstep with pain001 0.0.91**: CI runs the client against a
+  live pain001 0.0.91 server, and the vendored conformance kit,
+  unchanged since 0.0.90, matches core's kit byte for byte.
+- **Manual built with mkdocs-material 9.8.2**: it fixes
+  GHSA-wxw8-4jgj-q85j, a path traversal in the theme's privacy plugin,
+  and Dependabot now watches the manual's inputs.
 
 ### Security
 
@@ -22,8 +33,11 @@ is 0.0.88, the first published to Maven Central.
 ### Changed
 
 - `./mvnw` runs Maven 3.10.2 (was 3.10.1), SHA-256 checked as before.
-- CI uses `actions/setup-java` 6.3.0 (was 6.2.0) and
-  `ossf/scorecard-action` 2.6.0 (was 2.5.0), pinned by commit SHA.
+- CI uses `actions/setup-java` 6.3.0 (was 6.2.0),
+  `ossf/scorecard-action` 2.6.0 (was 2.5.0) and `github/codeql-action`
+  4.39.4 (was 4.39.3), pinned by commit SHA.
+- CI's conformance server is pain001 0.0.91 (was 0.0.90), pinned in
+  `ci/server-requirements.in`.
 
 ## [0.0.90] - 2026-11-16
 
