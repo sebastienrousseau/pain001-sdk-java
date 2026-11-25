@@ -6,10 +6,10 @@ The SDK follows the pain001 suite: each suite release is a release of
 this client, at the same version. What comes next is driven by what the
 server adds and what the conformance kit pins.
 
-## 0.0.91 (this release)
+## 0.0.91 (released 2026-11-25)
 
-- In lockstep with pain001 0.0.91; CI tests against that server once
-  it is on PyPI.
+- In lockstep with pain001 0.0.91; CI tests against that server.
+- The manual builds with mkdocs-material 9.8.2 (GHSA-wxw8-4jgj-q85j).
 
 ## 0.0.90 (released 2026-11-16)
 
